@@ -6,7 +6,14 @@ Description: This project interacts with the functionality of bio to do somethin
 Depends:
   R (>= 3.0.0),
   RODBC,
-  lubridate
+  lubridate,
+  bio.survey,
+  plyr,
+  ggplot2,
+  car,
+  reshape,
+  gridExtra,
+  gdata
 Imports:
   devtools
 Suggests:
