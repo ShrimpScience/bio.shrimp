@@ -2,6 +2,9 @@
 *.Rhistory
 *.RData
 *.Ruserdata
+*.jpeg
+*.pdf
+*.tiff
 ShadowDir.list
 R\ShadowDir.list
 .Rproj.user
