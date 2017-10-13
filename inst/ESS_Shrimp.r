@@ -5,7 +5,6 @@
 #' @param yrs is the survey years to estimate
 #' @param mnts months of the survey, defaults to the full year
 #' @param bin.size aggregates the abundance into size bins (default is 5mm bins)
-#' @param gear.type survey trawl net identification (default is 280 BALLOON)
 #' @return data.frame of survey data called 'shrimp.survey'
 #' 
 #' @importFrom plyr ddply
@@ -729,10 +728,10 @@ size.select<-subset(shrimp.DETAILS, GEAR==4)
 max.size<-ddply(size.select,.(BCODE,YEAR,SFA,XSET),summarize,MAX.LEN=max(CARLEN/10))
 #Drop single record from 1946
 table(max.size$YEAR)
-1946 1982 1983 1984 1985 1986 1987 1988 1993 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 
-1   59   41   61   55   54   55   63   40   48   57   60   58   98   59   65   57   65   60   58   60   59   60   60   60 
-2011 2012 2013 2014 2015 2016 
-59   60   60   60   60   60
+1946 1982 1983 1984 1985 1986 1987 1988 1993 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 
+   1   59   41   61   55   54   55   63   40   48   57   60   58   98   59   65   57   65   60   58   60   59 
+2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 
+  60   60   60   59   60   60   60   60   60   60 
 
 surv.max.len<-subset(max.size, !YEAR==1946)
 
@@ -746,7 +745,7 @@ surv.size<-ddply(surv.max.len,.(YEAR),summarize,MEAN=mean(MAX.LEN,na.rm=T),STD.E
 max.size.dat<-subset(surv.size,YEAR>1994)
 
 p2<-ggplot(max.size.dat,aes(YEAR,MEAN)) + geom_errorbar(aes(ymin=LOW_BOUND, ymax=UPP_BOUND)) + geom_line() + geom_point() + 
-  scale_x_continuous(name="Year", breaks= seq(1995,2016,3)) +
+  scale_x_continuous(name="Year", breaks= seq(1995,2017,3)) +
   scale_y_continuous(limits=c(28,31), name="Mean Max Length (mm)") + theme_bw() + 
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
   annotate("text", x = 1994.5, y = 31, label = "B") 
@@ -1028,6 +1027,89 @@ summary(shrimp.Juv)
 
 head(shrimp.survey)
 
+#Survey Age 2 Abundance:
+#Use shrimp.detail table which provides details of survey main catch samples, sampling year range 2002 to now
+#The shrimp.surv2 data is the survey data that excludes unsuccessful tows and comparative 
+#work - fixed and random tows, selected years>1994. Standardized catch and density calculated.
+str(shrimp.DETAILS)
+str(TOTALS.VIEW)
+subset(TOTALS.VIEW,GEAR==4)
+mt.detail<-shrimp.DETAILS[,c(1,5,6,9:17)]
+str(shrimp.surv2) 
+surv.9517<-subset(shrimp.surv2,YEAR>1994)
+surv.det<-surv.9517[,c(1:3,7,18,24,28,30:32,34,35)]
+surv.det<-rename.vars(surv.det, from="CRUISE",to="BCODE")
+mt.calc<-merge(surv.det,mt.detail, by= c("BCODE","XSET","SFA"))
+
+mt.calc$SA.ABUND<-1/mt.calc$TOTNUM*mt.calc$WEIGHT*(1.25/mt.calc$DIST)
+mt.calc$CARLEN<-round(mt.calc$CARLEN)
+#Total number of XSET per SFA:
+tot.set<-ddply(mt.calc,.(YEAR,SFA),summarize,NUM_TOW=length(unique(XSET)))
+set.table<-reshape(tot.set,v.names="NUM_TOW",idvar="YEAR",timevar="SFA", direction='wide')
+
+#CREATE Age by SFA abundance table:
+SFAarea.dat<-read.csv("C:/Users/cassistadarosm/Documents/GitHub/bio_data/bio.shrimp/data/Inputs/SFA.area.csv")
+str(bb.calc)
+belly.freq<-ddply(bb.calc,.(YEAR,SFA,CARLEN),summarize,ABUND=XCOUNT*RATIO*1.25/DIST)
+table.edit<-bb.calc[,c(3,9,12,16)]
+y=unique(bb.calc$YEAR)
+for(i in y){
+  bb.table<-reshape(a,v.names="SA.ABUND",idvar="CARLEN",timevar="SFA", direction='wide')
+}
+print(bb.table)
+
+for()
+  bb.table<-reshape(bb.calc,v.names="SA.ABUND",idvar="YEAR",timevar="SFA", direction='wide')
+comlog_4strat.cpue<-cpue.table[order(cpue.table$YEAR),]
+
+#CALC Bellybag ############ HARD CODED ##################  
+
+##### NOTe: Query would not run in SQLDeveloper. Michele ran and added output to 2016_data....read in csv below. 
+
+belly.qry<-paste("SELECT carlen, 
+                 sum(decode(J.sfa,13,(J.xcount*ratio*1.25/dist))), 
+                 sum(decode(J.sfa,14,(J.xcount*ratio*1.25/dist))), 
+                 sum(decode(J.sfa,15,(J.xcount*ratio*1.25/dist))), 
+                 sum(decode(J.sfa,17,(J.xcount*ratio*1.25/dist))),
+                 FROM shrjuv AS J, shrsurvey AS S,
+                 WHERE J.bcode=s.cruise
+                 AND J.sfa = s.sfa
+                 and J.xset = s.xset
+                 and s.setcode in(1,2) 
+                 and J.bcode='CK1601'
+                 group by round(carlen)
+                 order by round(carlen)")
+
+### Original ###
+#belly.qry<-paste("select round(carlen),
+#sum(decode(J.sfa,13,(J.xcount*ratio*1.25/dist))),
+#sum(decode(J.sfa,14,(J.xcount*ratio*1.25/dist))),
+#sum(decode(J.sfa,15,(J.xcount*ratio*1.25/dist))),
+#sum(decode(J.sfa,17,(J.xcount*ratio*1.25/dist)))
+#from shrjuv J, shrsurvey S
+#where J.bcode=s.cruise
+#and J.sfa=s.sfa
+#and J.xset=s.xset
+#and s.setcode in(1,2) and J.bcode='CK1601'
+#group by round(carlen)
+#order by round(carlen)",sep="")	
+
+
+belly.dat<-sqlQuery(ch,belly.qry)
+head(belly.dat)
+colnames(belly.dat)<-c("CarLen(mm)", "Strat13", "Strat14", "Strat15", "Strat17")
+head(belly.dat) #works	
+
+
+
+###Manual read in: 
+belly.dat<-read.csv("C:/Users/BroomeJ/Documents/R/SHRIMP/2016/data/shrjuvsfa.csv")
+
+surv.juv<-shrimp.Juv[,-c(2,3,4,7,8,10,11,12,13,14,15,18,19),]
+surv.set<-shrimp.survey[,-c(4:27,30,33)]
+summary(shrimp.Juv)
+
+head(shrimp.survey)
 
 
 
