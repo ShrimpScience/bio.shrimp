@@ -1,8 +1,8 @@
 Package: bio.shrimp
-Title: Package that interacts with bio and associated projects to ...
+Title: Package that organizes all statistical and descriptive functions in a variety of scripts to produce shrimp assessment and research analyses
 Version: 0.1
-Authors@R: c( person("Firstname", "Lastname", email="xxx@xxx.xxx", role=c("aut", "cre")) )
-Description: This project interacts with the functionality of bio to do something very special ...
+Authors@R: c( person("Manon", "Cassista-Da Ros", email="manon.cassista-daros@dfo-mpo.gc.ca", role=c("aut", "cre")) )
+Description: This project interacts with the functionality of other 'bio'- based projects to supplement the work produced in this package
 Depends:
   R (>= 3.0.0),
   RODBC,
@@ -21,6 +21,5 @@ Suggests:
 VignetteBuilder: knitr
 License:  MIT + file LICENSE
 LazyData: true
-URL: https://github.com/Beothuk/bio.template/
   RoxygenNote: 5.0.1
 RoxygenNote: 6.0.1
