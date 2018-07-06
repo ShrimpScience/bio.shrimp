@@ -3,7 +3,7 @@
 export(shrimp.db)
 importFrom(RODBC,odbcConnect)
 importFrom(RODBC,sqlQuery)
-importFrom(bio.utils,convert.dd.dddd)
+importFrom(bio.utilities,convert.dd.dddd)
 importFrom(lubridate,month)
 importFrom(lubridate,year)
 importFrom(utils,write.csv)
