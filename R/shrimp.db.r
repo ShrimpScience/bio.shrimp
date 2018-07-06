@@ -10,14 +10,16 @@
 #' @importFrom lubridate year
 #' @importFrom RODBC sqlQuery
 #' @importFrom RODBC odbcConnect
+#' @importFrom utils write.csv
+#' @importFrom lubridate month
+#' @importFrom bio.utils convert.dd.dddd
 #' @return Data objects that contain the data for use in further analyses.
 # @examples shrimp.db('survey.redo') # makes the data objects for the survey data.
 # shrimp.db('survey') #loads the object survey
 #' @export
-
-  shrimp.db = function( DS="complete.redo", oracle.server="PTRAN", oracle.username=NULL, oracle.password=NULL, 
+shrimp.db = function( DS="complete.redo", oracle.server="PTRAN", oracle.username=NULL, oracle.password=NULL, 
                         datadirectory=file.path(getwd(), "data")) {
-    options(stringsAsFactors=F)
+    
 
     fn.root =  file.path('datadirectory', 'data') 
     fnODBC  =  file.path(fn.root, 'ODBCDump')
@@ -40,10 +42,12 @@
         # survey
         con = odbcConnect(oracle.server, uid=oracle.username, pwd=oracle.password, believeNRows=F) # believeNRows=F required for oracle db's
         shrimp.survey<-sqlQuery(con,"select * from SHRIMP.SHRSURVEY")
-        shrimp.survey$CV_LAT<-convert.dd.dddd(shrimp.survey$BLAT)
-        shrimp.survey$CV_LONG<-convert.dd.dddd(shrimp.survey$BLONG)*-1
+        shrimp.survey$CV_LAT<-bio.utilities::convert.dd.dddd(shrimp.survey$BLAT)
+        shrimp.survey$CV_LONG<-bio.utilities::convert.dd.dddd(shrimp.survey$BLONG)*-1
         shrimp.survey$YEAR<-year(shrimp.survey$FDATE)
         save(shrimp.survey, file=file.path( fnODBC, "shrimp.survey.rdata"), compress=T)
+        write.csv(shrimp.survey,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/Shrimp/Survey.Data.",Sys.Date(),".csv",sep=""), row.names=F)
+        
         
         gc()
       }
@@ -62,6 +66,7 @@
         shrimp.COMLOG$YEAR<-year(shrimp.COMLOG$FDATE)
         shrimp.COMLOG$MONTH<-month(shrimp.COMLOG$FDATE)
         save(shrimp.COMLOG, file=file.path( fnODBC, "shrimp.comlog.rdata"), compress=T)
+        write.csv(shrimp.COMLOG,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/Shrimp/Comlog.Data.",Sys.Date(),".csv",sep=""), row.names=F)
         
         gc()
       }
@@ -75,15 +80,36 @@
         #browser()
         con = odbcConnect(oracle.server , uid=oracle.username, pwd=oracle.password, believeNRows=F) # believeNRows=F required for oracle db's
         shrimp.DETAILS<-sqlQuery(con,"select * from SHRIMP.SHRDETAIL")
+        shrimp.DETAILS$CV_LAT<-convert.dd.dddd(shrimp.DETAILS$LAT)
+        shrimp.DETAILS$CV_LONG<-convert.dd.dddd(shrimp.DETAILS$XLONG)*-1
         shrimp.DETAILS$YEAR<-year(shrimp.DETAILS$FDATE)
         shrimp.DETAILS$MONTH<-month(shrimp.DETAILS$FDATE)
         save(shrimp.DETAILS, file=file.path( fnODBC, "shrimp.detail.rdata"), compress=T)
+        write.csv(shrimp.DETAILS,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/Shrimp/Details.Data.",Sys.Date(),".csv",sep=""), row.names=F)
         
         gc()
       }
       load(file.path( fnODBC, "shrimp.detail.rdata"), .GlobalEnv)
       
     }
+    ### Shrimp observer data 
+    if (DS %in% c("observer.redo", "observer") ) {
+      
+      if (DS=="observer.redo") {
+        # observer
+        con = odbcConnect(oracle.server, uid=oracle.username, pwd=oracle.password, believeNRows=F) # believeNRows=F required for oracle db's
+        shrimp.observer<-sqlQuery(con,"select trip,isfishsets.trip_id, tripcd_id,iscatches.set_no, setdate, settime, latitude, longitude, iscatches.fishset_id, speccd_id, est_num_caught, est_kept_wt,est_discard_wt, est_reduction_wt,est_combined_wt  from observer.iscatches, observer.isfishsets, observer.istrips, observer.ISSETPROFILE where specscd_id=2211 and iscatches.fishset_id=isfishsets.fishset_id and isfishsets.trip_id=istrips.trip_id and iscatches.fishset_id=issetprofile.fishset_id ")
+        shrimp.observer$YEAR<-year(shrimp.observer$SETDATE)
+        save(shrimp.observer, file=file.path( fnODBC, "shrimp.observer.rdata"), compress=T)
+        write.csv(shrimp.observer,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/Shrimp/Observer.Data.",Sys.Date(),".csv",sep=""), row.names=F)
+        
+        
+        gc()
+      }
+      load(file.path( fnODBC, "shrimp.survey.rdata"), .GlobalEnv)
+      
+    }
+    
     ### Shrimp Detail in MILLIM VIEW 
     if (DS %in% c("MILLIM.redo", "MILLIM") ) {
       
@@ -93,6 +119,7 @@
         MILLIM.VIEW$YEAR<-year(MILLIM.VIEW$FDATE)
         MILLIM.VIEW$MONTH<-month(MILLIM.VIEW$FDATE)
         save(MILLIM.VIEW, file=file.path( fnODBC, "MILLIM.VIEW.rdata"), compress=T)
+        write.csv(MILLIM.VIEW,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/Shrimp/MILLIM.VIEW.",Sys.Date(),".csv",sep=""), row.names=F)
         
         gc()
       }
@@ -108,6 +135,7 @@
         TOTALS.VIEW$YEAR<-year(TOTALS.VIEW$FDATE)
         TOTALS.VIEW$MONTH<-month(TOTALS.VIEW$FDATE)
         save(TOTALS.VIEW, file=file.path( fnODBC, "TOTALS.VIEW.rdata"), compress=T)
+        write.csv(TOTALS.VIEW,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/Shrimp/TOTALS.VIEW.",Sys.Date(),".csv",sep=""), row.names=F)
         
         gc()
       }
@@ -123,6 +151,7 @@
         TOTALSFEMTRAN.VIEW$YEAR<-year(TOTALSFEMTRAN.VIEW$FDATE)
         TOTALSFEMTRAN.VIEW$MONTH<-month(TOTALSFEMTRAN.VIEW$FDATE)
         save(TOTALSFEMTRAN.VIEW, file=file.path( fnODBC, "TOTALSFEMTRAN.VIEW.rdata"), compress=T)
+        write.csv(TOTALSFEMTRAN.VIEW,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/Shrimp/TOTALSFEMTRAN.VIEW.",Sys.Date(),".csv",sep=""), row.names=F)
         
         gc()
       }
@@ -139,13 +168,14 @@
         shrimp.Juv$YEAR<-year(shrimp.Juv$FDATE)
         shrimp.Juv$MONTH<-month(shrimp.Juv$FDATE)
         save(shrimp.Juv, file=file.path( fnODBC, "shrimp.Juvenile.rdata"), compress=T)
+        write.csv(shrimp.Juv,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/Shrimp/shrimp.Juv.data.",Sys.Date(),".csv",sep=""), row.names=F)
         
         gc()
       }
       load(file.path( fnODBC, "shrimp.Juvenile.rdata"), .GlobalEnv)
       
     }
-    
+
   }    
   
 

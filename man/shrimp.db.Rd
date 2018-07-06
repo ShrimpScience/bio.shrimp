@@ -10,7 +10,7 @@ shrimp.db(DS = "complete.redo", oracle.server = "PTRAN",
 }
 \arguments{
 \item{DS}{is the main switch that selects which data source to load or operate. 
-Options for DS include: 'complete','annual.landings','logs','logs41','logs41jonah','observer41','atSea','cris','port','vlog','fsrs','scallop','survey','annual.landings'.  Any of these arguements called as listed return the data object. To make the data file from scratch would require a 'XXXX.redo', where XXXX is the option listed above.}
+Options for DS include: 'complete','survey','ComLogs'. Any of these arguements called as listed return the data object. To make the data file from scratch would require a 'XXXX.redo', where XXXX is the option listed above.}
 
 \item{oracle.server}{This is the server}
 

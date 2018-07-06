@@ -3,8 +3,15 @@
 *.RData
 *.Ruserdata
 *.jpeg
+*.jpg
+*.txt
+*.csv
 *.pdf
+*.ini
 *.tiff
 ShadowDir.list
 R\ShadowDir.list
 .Rproj.user
+InProgress/
+inst/Requests/
+datadirectory/
