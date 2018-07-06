@@ -14,14 +14,15 @@ Depends:
   gridExtra,
   gdata
 Imports:
-  devtools
+  devtools,
+    bio.utilities
 Suggests:
   knitr, rmarkdown
 Remotes:
   PopulationEcologyDivision/bio.utilities,
   PopulationEcologyDivision/bio.survey
 VignetteBuilder: knitr
-License:  MIT + file LICENSE
+License: MIT + file LICENSE
 LazyData: true
   RoxygenNote: 5.0.1
 RoxygenNote: 6.0.1
