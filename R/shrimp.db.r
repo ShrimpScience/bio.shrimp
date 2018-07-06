@@ -12,7 +12,7 @@
 #' @importFrom RODBC odbcConnect
 #' @importFrom utils write.csv
 #' @importFrom lubridate month
-#' @importFrom bio.utils convert.dd.dddd
+#' @importFrom bio.utilities convert.dd.dddd
 #' @return Data objects that contain the data for use in further analyses.
 # @examples shrimp.db('survey.redo') # makes the data objects for the survey data.
 # shrimp.db('survey') #loads the object survey
