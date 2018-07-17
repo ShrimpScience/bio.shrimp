@@ -30,7 +30,7 @@ require(bio.shrimp)
 #Survey data query:
 shrimp.db('survey.redo', oracle.username=oracle.username, oracle.password = oracle.password)
 shrimp.db('survey', oracle.username=oracle.username, oracle.password = oracle.password)
-str(shrimp.survey) #1892 RECORDS
+str(shrimp.survey) #1952 RECORDS
 head(shrimp.survey)
 
 #TABLE DATA:
@@ -65,7 +65,7 @@ head(ann.svy.CV)
 #6 1987  67.52873
 
 #PLOT survey CV by stratum area:
-cv.temp<-expand.grid.df(data.frame(YEAR=1982:2017),data.frame(STRATUM=c(13,14,15,17)))
+cv.temp<-expand.grid.df(data.frame(YEAR=1982:2018),data.frame(STRATUM=c(13,14,15,17)))
 survey.cv.strat<-merge(svy.CV.strat,cv.temp,id.vars=c('YEAR','STRATUM'),all=TRUE)
 
 ggplot(survey.cv.strat,aes(x=YEAR,y=COEF_VAR)) + geom_line() + 
@@ -75,10 +75,10 @@ ggplot(survey.cv.strat,aes(x=YEAR,y=COEF_VAR)) + geom_line() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 
 #PLOT survey CV by year:
-cv.temp.2<-expand.grid.df(data.frame(YEAR=1982:2017))
+cv.temp.2<-expand.grid.df(data.frame(YEAR=1982:2018))
 ann.survey.cv<-merge(ann.svy.CV,cv.temp.2,id.vars=c('YEAR'),all=TRUE)
 
-jpeg(filename="survey_cv.jpg")
+jpeg(filename="C://Users//cassistadarosm//Documents//GitHub//bio.shrimp//Figures//1d.survey_cv.2018.jpg")
 yg<-quantile(ann.svy.CV$COEF_VAR[ann.svy.CV$YEAR>1999&ann.svy.CV$YEAR<2011], probs=.33, na.rm=TRUE)
 ry<-quantile(ann.svy.CV$COEF_VAR[ann.svy.CV$YEAR>1999&ann.svy.CV$YEAR<2011], probs=.66, na.rm=TRUE)
 xmin=-Inf

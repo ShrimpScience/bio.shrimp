@@ -27,7 +27,7 @@
 ### MCassistaDaRos running and modifying code provided by DHardie/JBroome in ESS_Shrimp_2016.r
 ### Start: December 20, 2017 
 require(bio.shrimp)
-
+MMM = "Mike is awesome."
 #SURVEY DETAILS:
 #1 nautical mile = 1852 metres
 #1.25 nautical miles travelled during 30 minute tow at 2.5 knots
@@ -41,7 +41,7 @@ shrimp.db('survey.redo', oracle.username=oracle.username, oracle.password = orac
 shrimp.db('survey', oracle.username=oracle.username, oracle.password = oracle.password)
 str(shrimp.survey) #1952 RECORDS
 summary(shrimp.survey) # Quick check on all range in values are within expected parameters
-#write.csv(shrimp.survey,paste("I:/Offline Data Files/Shrimp/Survey.Data",Sys.Date(),".csv",sep=""), row.names=F)
+write.csv(shrimp.survey,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/ShrimpSurvey.Data",Sys.Date(),".csv",sep=""), row.names=F)
 head(shrimp.survey)
 
 #TABLE DATA:
@@ -56,175 +56,152 @@ table(shrimp.survey$YEAR)
 # 1- Select successful tows only and year range for reporting (data range available: 1982 to 2017):
 shrimp.surv<-subset(shrimp.survey, SETCODE<3 & YEAR>1994)
 
-# 2- In YEAR==1996, there was some comparative work.There are 11 tows done with the Cody & Kathryn, 
-# and those are excluded from analyses:
-shrimp.surv2<-subset(shrimp.surv, CRUISE!="CK9601")
-
-# 3- For YEARS where WING was not extracted from net mensuration, the expected measurement was used.
+# 2- For YEARS where WING was not extracted from net mensuration, the expected measurement was used.
 # In the case of YEARS where partial net mensuration data is available, the mean wing measurement
 # was calculated and used in the standardization.  Values were hardcoded in the database for all 
-# years except for 2006-07 
-shrimp.surv2[shrimp.surv2$YEAR==2008,]$WING<-17.4
+# years except for 2006-07. 
+shrimp.surv[shrimp.surv$YEAR==2008,]$WING<-17.4
 
 # 4- Replace WING==0/NA and H_HEADLINE==0/NA with mean of WING/H_HEADLINE measurement for that 
 # year's survey measurements
-y=unique(shrimp.surv2$YEAR)
+y=unique(shrimp.surv$YEAR)
 for(i in 1:length(y)){
-  mW = mean(shrimp.surv2$WING[shrimp.surv2$YEAR==y[i] & shrimp.surv2$WING!=0], na.rm = T)
-  mH = mean(shrimp.surv2$H_HEIGHT[shrimp.surv2$YEAR==y[i] & shrimp.surv2$H_HEIGHT!=0], na.rm = T)
-  shrimp.surv2$WING[shrimp.surv2$YEAR==y[i]&is.na(shrimp.surv2$WING)]=mW
-  shrimp.surv2$H_HEIGHT[shrimp.surv2$YEAR==y[i]&is.na(shrimp.surv2$H_HEIGHT)]=mH
-  shrimp.surv2$WING[shrimp.surv2$YEAR==y[i]&shrimp.surv2$WING==0]=mW
-  shrimp.surv2$H_HEIGHT[shrimp.surv2$YEAR==y[i]&shrimp.surv2$H_HEIGHT==0]=mH
+  mW = mean(shrimp.surv$WING[shrimp.surv$YEAR==y[i] & shrimp.surv$WING!=0], na.rm = T)
+  mH = mean(shrimp.surv$H_HEIGHT[shrimp.surv$YEAR==y[i] & shrimp.surv$H_HEIGHT!=0], na.rm = T)
+  shrimp.surv$WING[shrimp.surv$YEAR==y[i]&is.na(shrimp.surv$WING)]=mW
+  shrimp.surv$H_HEIGHT[shrimp.surv$YEAR==y[i]&is.na(shrimp.surv$H_HEIGHT)]=mH
+  shrimp.surv$WING[shrimp.surv$YEAR==y[i]&shrimp.surv$WING==0]=mW
+  shrimp.surv$H_HEIGHT[shrimp.surv$YEAR==y[i]&shrimp.surv$H_HEIGHT==0]=mH
 }
 
 #In 1995 and 1996 different trawl nets were used.  From 1997 onward the gear type has been constant.
 #Standardize catches and calculate density:
-y=unique(shrimp.surv2$YEAR)
-shrimp.surv2$STD_CATCH<-NA
-shrimp.surv2$ADJ_STD_CATCH<-NA
-shrimp.surv2$DENSITY<-NA
-
+y=unique(shrimp.surv$YEAR)
+shrimp.surv$STD_CATCH<-NA
+shrimp.surv$ADJ_STD_CATCH<-NA
+shrimp.surv$DENSITY<-NA
+## ADJ_STD_CATCH parameter created to calculate catch during comparative years only ## 
 for(j in 1:length(y)){
-  #browser()
   #1995 and 1996 catches are standardized and adjusted to gear being used from 1997 onward
    if (y[j]==1995 ){
-     shrimp.surv2[shrimp.surv2$YEAR==y[j],"STD_CATCH"]<-
-     shrimp.surv2[shrimp.surv2$YEAR==y[j],"WEIGHT"] *
-    ((15.1/shrimp.surv2[shrimp.surv2$YEAR==y[j],"WING"])*
-    (1.19/shrimp.surv2[shrimp.surv2$YEAR==y[j],"DIST"]))
+     shrimp.surv[shrimp.surv$YEAR==y[j],"STD_CATCH"]<-
+     shrimp.surv[shrimp.surv$YEAR==y[j],"WEIGHT"] *
+    ((15.1/shrimp.surv[shrimp.surv$YEAR==y[j],"WING"])*
+    (1.19/shrimp.surv[shrimp.surv$YEAR==y[j],"DIST"]))
      #Adjustment to final catch is     
-     shrimp.surv2[shrimp.surv2$YEAR==y[j],"ADJ_STD_CATCH"]<-
-       (shrimp.surv2[shrimp.surv2$YEAR==y[j],"STD_CATCH"] -
+     shrimp.surv[shrimp.surv$YEAR==y[j],"ADJ_STD_CATCH"]<-
+       (shrimp.surv[shrimp.surv$YEAR==y[j],"STD_CATCH"] -
           41.61)/1.1826
      #Use adjusted catch in density calculations
-     shrimp.surv2[shrimp.surv2$YEAR==y[j],"DENSITY"]<-
-       (shrimp.surv2[shrimp.surv2$YEAR==y[j],"ADJ_STD_CATCH"]*
-       1000)/(shrimp.surv2[shrimp.surv2$YEAR==y[j],"DIST"]*1852*shrimp.surv2[shrimp.surv2$YEAR==y[j],"WING"])
+     shrimp.surv[shrimp.surv$YEAR==y[j],"DENSITY"]<-
+       (shrimp.surv[shrimp.surv$YEAR==y[j],"ADJ_STD_CATCH"]*
+       1000)/(shrimp.surv[shrimp.surv$YEAR==y[j],"DIST"]*1852*shrimp.surv[shrimp.surv$YEAR==y[j],"WING"])
      
   #Comparative work done in 1996, catch was standardized to net mensuration and adjusted 
   #according to linear regression equation : y=0.6564(x)-38.77, x = Cody & Kathryn catch
   }else if (y[j]==1996){
-    shrimp.surv2[shrimp.surv2$YEAR==y[j],"STD_CATCH"]<-
-    shrimp.surv2[shrimp.surv2$YEAR==y[j],"WEIGHT"] *
-    (18.1/shrimp.surv2[shrimp.surv2$YEAR==y[j],"WING"])*
-    ((1.24*1852)/(shrimp.surv2[shrimp.surv2$YEAR==y[j],"DIST"]*1852))
+    shrimp.surv[shrimp.surv$YEAR==y[j],"STD_CATCH"]<-
+    shrimp.surv[shrimp.surv$YEAR==y[j],"WEIGHT"] *
+    (18.1/shrimp.surv[shrimp.surv$YEAR==y[j],"WING"])*
+    ((1.24*1852)/(shrimp.surv[shrimp.surv$YEAR==y[j],"DIST"]*1852))
   #Adjustment to final catch is     
-    shrimp.surv2[shrimp.surv2$YEAR==y[j],"ADJ_STD_CATCH"]<-
-      (1.5235*shrimp.surv2[shrimp.surv2$YEAR==y[j],"STD_CATCH"] +
+    shrimp.surv[shrimp.surv$YEAR==y[j],"ADJ_STD_CATCH"]<-
+      (1.5235*shrimp.surv[shrimp.surv$YEAR==y[j],"STD_CATCH"] +
       (38.77-41.61))/1.1826
   #Use adjusted catch in density calculations
-    shrimp.surv2[shrimp.surv2$YEAR==y[j],"DENSITY"]<-
-      (shrimp.surv2[shrimp.surv2$YEAR==y[j],"ADJ_STD_CATCH"]*
-         1000)/(shrimp.surv2[shrimp.surv2$YEAR==y[j],"DIST"]*1852*shrimp.surv2[shrimp.surv2$YEAR==y[j],"WING"])
+    shrimp.surv[shrimp.surv$YEAR==y[j],"DENSITY"]<-
+      (shrimp.surv[shrimp.surv$YEAR==y[j],"ADJ_STD_CATCH"]*
+         1000)/(shrimp.surv[shrimp.surv$YEAR==y[j],"DIST"]*1852*shrimp.surv[shrimp.surv$YEAR==y[j],"WING"])
     
   #Comparative work done in 1997, catch was standardized to net mensuration and adjusted 
   #according to linear regression equation : y=0.8457(x)-41.61, x = Cody & Kathryn catch
   } else if (y[j]==1997){
-    shrimp.surv2[shrimp.surv2$YEAR==y[j],"STD_CATCH"]<-
-      shrimp.surv2[shrimp.surv2$YEAR==y[j],"WEIGHT"] *
-    (17.3/shrimp.surv2[shrimp.surv2$YEAR==y[j],"WING"])*
-    ((1.21*1852)/(shrimp.surv2[shrimp.surv2$YEAR==y[j],"DIST"]*1852))
+    shrimp.surv[shrimp.surv$YEAR==y[j],"STD_CATCH"]<-
+      shrimp.surv[shrimp.surv$YEAR==y[j],"WEIGHT"] *
+    (17.3/shrimp.surv[shrimp.surv$YEAR==y[j],"WING"])*
+    ((1.21*1852)/(shrimp.surv[shrimp.surv$YEAR==y[j],"DIST"]*1852))
   #Density correction applied to the calculations
-    shrimp.surv2[shrimp.surv2$YEAR==y[j],"DENSITY"]<-
-      (1.1825*(shrimp.surv2[shrimp.surv2$YEAR==y[j],"STD_CATCH"]*
-      1000)/(shrimp.surv2[shrimp.surv2$YEAR==y[j],"DIST"]*1852*shrimp.surv2[shrimp.surv2$YEAR==y[j],"WING"])) +
+    shrimp.surv[shrimp.surv$YEAR==y[j],"DENSITY"]<-
+      (1.1825*(shrimp.surv[shrimp.surv$YEAR==y[j],"STD_CATCH"]*
+      1000)/(shrimp.surv[shrimp.surv$YEAR==y[j],"DIST"]*1852*shrimp.surv[shrimp.surv$YEAR==y[j],"WING"])) +
       1.027
     
   }else if (y[j]>1997){
-  shrimp.surv2[shrimp.surv2$YEAR==y[j],"STD_CATCH"]<-
-    shrimp.surv2[shrimp.surv2$YEAR==y[j],"WEIGHT"]*
-    (17.4/shrimp.surv2[shrimp.surv2$YEAR==y[j],"WING"])*
-    ((1.25*1852)/(shrimp.surv2[shrimp.surv2$YEAR==y[j],"DIST"]*1852))
+  shrimp.surv[shrimp.surv$YEAR==y[j],"STD_CATCH"]<-
+    shrimp.surv[shrimp.surv$YEAR==y[j],"WEIGHT"]*
+    (17.4/shrimp.surv[shrimp.surv$YEAR==y[j],"WING"])*
+    ((1.25*1852)/(shrimp.surv[shrimp.surv$YEAR==y[j],"DIST"]*1852))
   
-  shrimp.surv2[shrimp.surv2$YEAR==y[j],"DENSITY"]<-
-    shrimp.surv2[shrimp.surv2$YEAR==y[j],"STD_CATCH"]*
-    1000/(shrimp.surv2[shrimp.surv2$YEAR==y[j],"DIST"]*1852*shrimp.surv2[shrimp.surv2$YEAR==y[j],"WING"])
+  shrimp.surv[shrimp.surv$YEAR==y[j],"DENSITY"]<-
+    shrimp.surv[shrimp.surv$YEAR==y[j],"STD_CATCH"]*
+    1000/(shrimp.surv[shrimp.surv$YEAR==y[j],"DIST"]*1852*shrimp.surv[shrimp.surv$YEAR==y[j],"WING"])
 }
-  }  
-    shrimp.surv2[!is.na(shrimp.surv2$ADJ_STD_CATCH) & 
-                   shrimp.surv2$ADJ_STD_CATCH<0,"ADJ_STD_CATCH"]<-0 
-    shrimp.surv2[!is.na(shrimp.surv2$DENSITY) & 
-                   shrimp.surv2$DENSITY<0,"DENSITY"]<-0 
-    
-  shrimp.surv2$F_STD_CATCH<-
-    
-######################## TEMPORARY ANNUAL TABLE ################################    
-survey.2018<-subset(shrimp.surv2,YEAR==2018)
-survey.2018$STD_CATCH<-survey.2018$WEIGHT*(17.4/survey.2018$WING)*((1.25*1852)/(survey.2018$DIST*1852))
-survey.2018$DENSITY<-survey.2018$STD_CATCH*1000/(survey.2018$DIST*1852*survey.2018$WING)
-survey.table<-data.frame('SET'=survey.2018$XSET,'SFA'=survey.2018$STRATUM,'DATE'=survey.2018$FDATE,'LAT'=survey.2018$BLAT,
-                            'LONG'=survey.2018$BLONG,'SPEED'=survey.2018$SPEED,'DIST'=survey.2018$DIST,
-                            'DUR'=survey.2018$DURATION,'WING'=survey.2018$WING,'ADEPTH'=survey.2018$ADEPTH,
-                            'TEMP'=survey.2018$TEMP,'RAW_CATCH'=survey.2018$WEIGHT,'STD_CATCH'=survey.2018$STD_CATCH,
-                            'DENSITY'=survey.2018$DENSITY)  
-write.csv(survey.table,file='C:/Users/cassistadarosm/Documents/SHRIMP/Data/2018 Assessment/Survey2018Data.csv')  
-  
-  
+}
+
+#STD_CATCH and DENSITY should all be populated with a value.
+#Check for NAs and negative values.  Replace as needed.
+#Negative values in DENSITY are replaced with zero values:
+
+    shrimp.surv[!is.na(shrimp.surv$ADJ_STD_CATCH) & 
+                   shrimp.surv$ADJ_STD_CATCH<0,"ADJ_STD_CATCH"]<-0 
+    shrimp.surv[!is.na(shrimp.surv$DENSITY) & 
+                   shrimp.surv$DENSITY<0,"DENSITY"]<-0 
+
+#Create a column that brings together the final catch values for each year:
+shrimp.surv$FINAL_CATCH<-NA
+
+shrimp.surv$FINAL_CATCH <- ifelse(is.na(shrimp.surv[,"ADJ_STD_CATCH"]),
+       shrimp.surv[,"STD_CATCH"],
+       shrimp.surv[,"ADJ_STD_CATCH"]
+       )
+head(shrimp.surv) 
 ################################################################################      
-  shrimp.surv2$STD_CATCH<-shrimp.surv2$WEIGHT*(17.4/shrimp.surv2$WING)*((1.25*1852)/(shrimp.surv2$DIST*1852))
-  shrimp.surv2$DENSITY<-shrimp.surv2$STD_CATCH*1000/(shrimp.surv2$DIST*1852*shrimp.surv2$WING)
-
 #Create table of standardized values to use with the Stratify function:
-  
-  b<-ddply(shrimp.surv2,.(YEAR,SFA),summarize,AVG_STD_CATCH=mean(ADJ_STD_CATCH)
-  #same as below, differences are with including liner tows in biomass or not
-
-
-
-shrimp.surv2$STD_CATCH<-shrimp.surv2$WEIGHT*(17.4/shrimp.surv2$WING)*((1.25*1852)/(shrimp.surv2$DIST*1852))
-shrimp.surv2$DENSITY<-shrimp.surv2$WEIGHT*1000/(shrimp.surv2$DIST*1852*shrimp.surv2$WING)
-
 #Calculate a mean, and standard deviation on catch by SFA:
-survey.dat<-ddply(shrimp.surv2,.(YEAR,SFA),summarize,MSTD_CATCH=mean(STD_CATCH,na.rm=T),
-                  STDEV=sd(STD_CATCH,na.rm=T))
-head(survey.dat)
 
-mike = shrimp.surv2[,c("YEAR", "SFA", "STD_CATCH")]
-mike$sp = 999
+survey.dat<-select(shrimp.surv, YEAR,STRATUM,XSET,FINAL_CATCH)
+
+#survey.dat<-ddply(shrimp.surv,.(YEAR,STRATUM),summarize,AVG_STD_CATCH=mean(FINAL_CATCH),
+#           STDEV=sd(FINAL_CATCH,na.rm=T))
+
 #Plot Standardized survey catch:
-ggplot(survey.dat,aes(YEAR,MSTD_CATCH)) + geom_bar(stat='identity', position="stack")
+ggplot(survey.dat,aes(YEAR,AVG_STD_CATCH)) + geom_bar(stat='identity', position="stack")
 
 #Run data through the stratify function one year at a time:
 strata.Shrimp<-rename(strata.area.data,c("Stratum"="Strata","km2"="Area","Num_Units"="NH"))
+
+
 outputs2 <- as.data.frame(do.call(rbind,out))
 out <- list()
 m=0
 y=unique(survey.dat$YEAR)
 
 for(i in 1:length(y)){
-  browser()
-  SurveyCatchStd = survey.dat[survey.dat$YEAR==y[i],]
-  SurveyCatchStd = SurveyCatchStd[,c("SFA","MSTD_CATCH")]
-  SurveyCatchStd$STRATA.ID=SurveyCatchStd$Strata=SurveyCatchStd$SFA
-  SurveyCatchStd = Prepare.strata.data(SurveyCatchStd)
+  SurveyCatchStd = survey.dat[survey.dat$YEAR==y[i]]
+  SurveyCatchStd<-rename.vars(SurveyCatchStd, from='FINAL_CATCH', to='FINAL.CATCH')
+  SurveyCatch = SurveyCatchStd[,c("STRATUM","FINAL.CATCH")]
+  SurveyCatch$STRATA.ID=SurveyCatch$Strata=SurveyCatch$STRATUM
+  SurveyCatchStd = Prepare.strata.data(SurveyCatch)
   strata.Shrimp = Prepare.strata.file(strata.Shrimp)
-  survey.CPUE<-Stratify(SurveyCatchStd,strata.group=strata.Shrimp, strata.name = SurveyCatchStd$STRATA.ID, species=MSTD.CATCH)
+  browser()
+  survey.CPUE<-Stratify(SurveyCatchStd,strata.group=strata.Shrimp, species=FINAL.CATCH)
   Shrimp.boot<-boot.strata(survey.CPUE,nresamp=1000,method="BWR")
+  Boot.Sum<-summary.boot(Shrimp.boot,CI.method = "Percentile",prints=T)
   d<-survey.CPUE$Strata
-  thing = summary.boot(Shrimp.boot,CI.method = "Percentile",prints=T)
   print(y[i])
   print(survey.CPUE$Strata[i])
   print(survey.CPUE$Mean[i])
-  print(SurveyCatchStd$MSTD.CATCH)
+  print(SurveyCatchStd$AVG.STD.CATCH)
   m=m+1
-  out[[m]]<-c(y[i,],d)
-  #out[[m]]<-c(Strata=survey.CPUE$Strata,Set=survey.CPUE$Sets,Mean=survey.CPUE$Mean,
-                       #survey.CPUE$Std.Err,Strat_Mean=mean(Shrimp.boot$boot.means))
+  out[[m]]<-c(y[i],d)
+  out[[m]]<-c(Strata=survey.CPUE$Strata,Set=survey.CPUE$Sets,Mean=survey.CPUE$Mean,
+                       survey.CPUE$Std.Err,Strat_Mean=mean(Shrimp.boot$boot.means))
 }
 outputs2 <- as.data.frame(do.call(rbind,out))
 
 
 
-a<-survey.dat
-tt2 <- unique(survey.dat['YEAR'])
-#yy<-unique(survey.dat$YEAR)
-for(i in 1:nrow(tt2)){
-      b <- a[a$SFA==tt2[k,1]	& a$STD_CATCH==tt2[k,2],]
-    d <- nrow(b[b$FISH_LENGTH>f[f$Season==tt[k,3] & f$OFFAREA==tt[k,1],'ref.mean'],])/nrow(b)
-    m=m+1
-    out[[m]] <- c(tt[k,],d)	 
-  }
+
 #Isolate last survey year:
 survey.2017<-subset(shrimp.surv2,YEAR==2017)
 
