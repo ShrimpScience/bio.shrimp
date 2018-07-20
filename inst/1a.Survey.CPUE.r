@@ -56,13 +56,7 @@ table(shrimp.survey$YEAR)
 # 1- Select successful tows only and year range for reporting (data range available: 1982 to 2017):
 shrimp.surv<-subset(shrimp.survey, SETCODE<3 & YEAR>1994)
 
-# 2- For YEARS where WING was not extracted from net mensuration, the expected measurement was used.
-# In the case of YEARS where partial net mensuration data is available, the mean wing measurement
-# was calculated and used in the standardization.  Values were hardcoded in the database for all 
-# years except for 2006-07. 
-shrimp.surv[shrimp.surv$YEAR==2008,]$WING<-17.4
-
-# 4- Replace WING==0/NA and H_HEADLINE==0/NA with mean of WING/H_HEADLINE measurement for that 
+# 2- Replace WING==0/NA and H_HEADLINE==0/NA with mean of WING/H_HEADLINE measurement for that 
 # year's survey measurements
 y=unique(shrimp.surv$YEAR)
 for(i in 1:length(y)){
