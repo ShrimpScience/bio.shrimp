@@ -1,8 +1,8 @@
-#' @title 1b.Gulf.CPUE
-#' @description Calculates Gulf Commercial CPUE indicator as part of the Abundance Characteristics in our assessment 
-#' @param sfa defines the specific SFA for the survey
-#' @param yrs is the survey years to estimate
-#' @param mnts months of the survey, defaults to the full year
+#' @title 1c.Std.CPUE
+#' @description Calculates ESS portion of Commercial CPUE indicator as part of the Abundance Characteristics in our assessment 
+#' @param sfa defines the specific ESS SFAs 
+#' @param yrs is the stock years to estimate
+#' @param mnts months, defaults to the full year
 #' @return data.frame of commercial log data called 'shrimp.COMLOG'
 #' 
 #' @importFrom plyr ddply
@@ -13,20 +13,21 @@
 #' @importFrom effects allEffects
 #' @importFrom gridExtra grid.arrange
 #' @importFrom gdata rename.vars
+#' @importFrom xlsx write.xlsx
 
 #' 
 #' @author Manon Cassista-Da Ros, \email{manon.cassista-daros@@dfo-mpo.gc.ca}
 #' @export
 
 ### MCassistaDaRos running and modifying code provided by DHardie/JBroome in ESS_Shrimp_2016.r
-### Start: December 20, 2017 
+### Start: July 20, 2018 
 require(bio.shrimp)
 
-##################################### Commercial Catches ########################################## 
+##################################### Commercial Logbook Data ########################################## 
 #Data Query:
 shrimp.db('ComLogs.redo', oracle.username=oracle.username, oracle.password = oracle.password)
 shrimp.db('ComLogs', oracle.username=oracle.username, oracle.password = oracle.password)
-str(shrimp.COMLOG) #49,043 RECORDS
+str(shrimp.COMLOG) #49,418 RECORDS
 head(shrimp.COMLOG)
 
 #TABLE DATA:
@@ -34,152 +35,301 @@ head(shrimp.COMLOG)
 table(shrimp.COMLOG$YEAR)
 #1993 1994 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 
 #1082 1220 1184 1605 2151 1716 1720 1807 2049 1851 2144 1799 1949 2193 2265 2086 1628 2552 2400 
-#2012 2013 2014 2015 2016 2017
-#2579 2143 2794 2866 1829 1431 
+#2012 2013 2014 2015 2016 2017 2018 
+#2579 2143 2794 2866 1829 1551  255
 
-#Gulf Commercial Landings only:
-Gulf.comlog<-subset(shrimp.COMLOG, WEIGHT>0 & FHOURS>0 & BTYPE==3, na.rm=T)
-#ESS Commercial Landings only:
-ESS.comlog<-subset(shrimp.COMLOG, WEIGHT>0 & FHOURS>0 & BTYPE==1, na.rm=T)
+#Calculate CPUE by record before filtering:
+shrimp.COMLOG$CPUE<-(shrimp.COMLOG$WEIGHT/((trunc(shrimp.COMLOG$FHOURS/100)+((shrimp.COMLOG$FHOURS/100)-trunc(shrimp.COMLOG$FHOURS/100))/0.6)))
 
-#Calculate annual CPUE (Kg/Hr):
+#CATCH TABLE:
+# The catch table includes all vessels and their catch by SFA - includes factory trawlers
+#############################################################################################
+# The calculations for catch include an effort filter of FHOURS>0, which could be removed
+# when only looking at quantifying catch.  Something to adjust for framework.
+#############################################################################################
+# Map in ArcMap to plot data points to evaluate fishing coordinates
+# Inshore box was created in Google Earth, exported xml to convert into a shapefile.  
+# Coordinates are:  -59.333333,46,0 -61.333333,46,0 -61.333333,45,0 -59.333333,45,0 -59.333333,46,0 
+
+#OFFSHORE:
+off.comlog<-subset(shrimp.COMLOG, !(BLAT>451000 && BLONG>592000) & SFA!=16 & WEIGHT>0 & FHOURS>0 & BTYPE<4, na.rm=F)
+off.comlog$STRATUM<-off.comlog$SFA
+off.comlog$TYPE<-'OFFSHORE'
+
+#INSHORE:
+ins.comlog<-subset(shrimp.COMLOG, BLAT>451000 & BLONG>592000 & WEIGHT>0 & FHOURS>0 & BTYPE!=4, na.rm=F)
+ins.comlog$STRATUM<-ins.comlog$SFA
+ins.comlog$TYPE<-'INSHORE'
+
+#TRAP:
+trap.inshore<-subset(shrimp.COMLOG, BLAT>451000 & BLONG>592000 & WEIGHT>0 & FHOURS>0 & BTYPE==4, na.rm=F)
+trap.inshore$STRATUM<-17
+trap.inshore$TYPE<-'TRAP'
+
+#Combined overall catch table(populates figure 6 in ResDoc):
+catch.all<-rbind(off.comlog,ins.comlog,trap.inshore)
+write.xlsx(catch.all, file= "C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/All.Catch.for.GIS.2018.xlsx")
+catch.table<-ddply(catch.all,.(YEAR,STRATUM,TYPE),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=round(sum(WEIGHT/1000),2))
+catchSFA.table<-ddply(catch.all,.(YEAR,STRATUM),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=round(sum(WEIGHT/1000),2))
+catch.strata17<-subset(catch.all,TYPE %in% c("INSHORE","TRAP"))
+catch17.table<-ddply(catch.strata17,.(YEAR),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=round(sum(WEIGHT/1000),2))
+catch17.table$STRATUM<-17
+catch17.table$TYPE<-'COMBO'
+catch<-rbind(catch.table,catch17.table)
+write.xlsx(catch,file="C:/Users/cassistadarosm/Documents/SHRIMP/Data/Spreadsheets/Catch.Report.2018.xlsx")
+
+
+#UNSTANDARDIZED TRAWL CPUE:
+#CPUE CALCULATIONS:
+
+#Calculate unstandardized annual CPUE (Kg/Hr):
 #Converts effort from FHOURS to HOURS and DECIMAL HOURS
-Gulf.cpue<-ddply(Gulf.comlog,.(YEAR),summarize,GULF_CPUE=mean(WEIGHT)/mean(trunc(FHOURS/100)+((FHOURS/100)-trunc(FHOURS/100))/0.6))
->Gulf.cpue
-#   YEAR GULF_CPUE
-#1  1993     187.9
-#2  1994     213.5
-#3  1995     187.0
-#4  1996     244.6
-#5  1997     236.3
-#6  1998     343.7
-#7  1999     395.7
-#8  2000     383.7
-#9  2001     428.2
-#10 2002     572.4
-#11 2003     675.4
-#12 2004     793.1
-#13 2005     683.3
-#14 2006     716.4
-#15 2007     696.6
-#16 2008     664.1
-#17 2009     648.8
-#18 2010     536.2
-#19 2011     671.2
-#20 2012     520.9
-#21 2013     626.7
-#22 2014     418.7
-#23 2015     571.0
-#24 2016     547.8
-#25 2017     442.6
+table(shrimp.COMLOG$BTYPE,shrimp.COMLOG$SFA)
 
-# These Gulf CPUE values are in ess_2017 spreadsheet
+# OFFSHORE SELECTION:
+off.comlog<-subset(shrimp.COMLOG, !(BLAT>451000 && BLONG>592000) & SFA!=16 & WEIGHT>0 & FHOURS>0 & BTYPE<4 &
+                     !(BCODE %in% c(5631,102680)), na.rm=F)
+off.comlog$STRATUM<-off.comlog$SFA
+offshore.catch<-ddply(off.comlog,.(YEAR,STRATUM),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=round(sum(WEIGHT/1000)),EFFORT_HR=sum(FHOURS))
+offshore.cpue<-ddply(off.comlog,.(YEAR,STRATUM),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=sum(WEIGHT/1000),AVG_CPUE=mean(CPUE))
+offshore.cpue
+# INSHORE SELECTION:
+ins.comlog<-subset(shrimp.COMLOG, BLAT>451000 & BLONG>592000 & WEIGHT>0 & FHOURS>0 & BTYPE<4, na.rm=T)
+ins.comlog$STRATUM<-17
+inshore.catch<-ddply(ins.comlog,.(YEAR,SFA),summarize,CATCH_MT=round(sum(WEIGHT/1000)),EFFORT_HR=sum(FHOURS))
+inshore.cpue<-ddply(ins.comlog,.(YEAR,STRATUM),summarize,CATCH_MT=sum(WEIGHT/1000),AVG_CPUE=mean(CPUE))
+inshore.cpue
 
-######################################### GRAPHICS ################################################
-# PLOT Gulf CPUE:
-#Indicator Plot:
-jpeg(filename="gulf_cpue.jpg")
-ry<-quantile(Gulf.cpue$GULF_CPUE[Gulf.cpue$YEAR>1999&Gulf.cpue$YEAR<2011], probs=.33, na.rm=TRUE)
-yg<-quantile(Gulf.cpue$GULF_CPUE[Gulf.cpue$YEAR>1999&Gulf.cpue$YEAR<2011], probs=.66, na.rm=TRUE)
+#TRAP SELECTION:
+trap.comlog<-subset(shrimp.COMLOG, BTYPE==4)
+#Trapping occurs in 2 SFAs, SFGA 16 and 17
+#table(trap.comlog$SFA)
+#16    17 
+#1027 10256 
+#Trap catches in the past seem to include SFA 17 only
+trap.SFA17<-subset(trap.comlog, SFA==17)
+#Trap catches in the past excluded records with FHOURS==0
+table(trap.SFA17$FHOURS) #3 records with 0 hours (2014-15), but WEIGHT and NTRAPS - I left in
+trap.catch<-ddply(trap.SFA17,.(YEAR,SFA),summarize,CATCH_MT=round(sum(WEIGHT)),EFFORT_TP=sum(NTRAPS,na.rm=T))
+trap.cpue<-ddply(trap.catch,.(YEAR,SFA),summarize,AVG_CPUE=CATCH_MT/EFFORT_TP)
+trap.cpue
+
+jpeg(filename="trap_cpue.jpg")
+ry<-quantile(trap.cpue$AVG_CPUE[trap.cpue$YEAR>1999&trap.cpue$YEAR<2011], probs=.33, na.rm=TRUE)
+yg<-quantile(trap.cpue$AVG_CPUE[trap.cpue$YEAR>1999&trap.cpue$YEAR<2011], probs=.66, na.rm=TRUE)
 xmin=-Inf
 xmax=Inf
-ggplot(Gulf.cpue, aes(YEAR,GULF_CPUE)) +
+ggplot(trap.cpue, aes(YEAR,AVG_CPUE)) +
   geom_rect(aes(xmin = xmin, xmax = xmax,ymin = -Inf, ymax = ry), fill = "red", alpha = 0.015) +
-  geom_rect(aes(xmin = xmin, xmax = xmax,ymin =595.4 , ymax = yg), fill = "yellow", alpha = 0.015) + 
-  geom_rect(aes(xmin = xmin, xmax = xmax,ymin = 680.1, ymax = Inf), fill = "green", alpha = 0.015) +
+  geom_rect(aes(xmin = xmin, xmax = xmax,ymin =ry , ymax = yg), fill = "yellow", alpha = 0.015) + 
+  geom_rect(aes(xmin = xmin, xmax = xmax,ymin = yg, ymax = Inf), fill = "green", alpha = 0.015) +
   geom_hline(yintercept = yg,colour="dark green") + geom_hline(yintercept = ry,colour="red") + 
-  geom_point() + geom_line() + scale_x_continuous(name="Year",breaks=seq(min(Gulf.cpue$YEAR), max(Gulf.cpue$YEAR), 3)) +
-  scale_y_continuous(name="Gulf cpue (kg/hr)") + theme_bw() +
+  geom_point() + geom_line() + scale_x_continuous(name="Year",breaks=seq(min(trap.cpue$YEAR), max(trap.cpue$YEAR), 2)) +
+  scale_y_continuous(name="Trap cpue (kg/trap haul)") + theme_bw() +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
-dev.off() 
+dev.off()    
 
-#Plot Gulf CPUE by month:
-str(Gulf.comlog)
-Gulf.mth.cpue<-ddply(Gulf.comlog,.(YEAR,MONTH),summarize,GULF_M_CPUE=mean(WEIGHT)/mean(trunc(FHOURS/100)+((FHOURS/100)-trunc(FHOURS/100))/0.6))
-ggplot(Gulf.mth.cpue,aes(MONTH,GULF_M_CPUE)) + geom_line() + geom_point() +
-  scale_x_continuous(name="Month",breaks=seq(1, 12, 1)) +
-  scale_y_continuous(name="CPUE (kg/hr)", breaks=seq(0,1000,250)) + theme_bw() + ggtitle("Monthly Gulf CPUE") +
-  facet_wrap(~YEAR)
+################################ Commercial Catch ##########################################
+str(shrimp.COMLOG) #48,751 RECORDS
+head(shrimp.COMLOG)
+#INSHORE:
+#Select data that is inshore only (blat<451000	and	blong<592000) with records
+#that have WEIGHT and FHOURS that are not 0 or NA
+ins.catch<-subset(shrimp.COMLOG, BLAT>451000 & BLONG>592000 & WEIGHT>0 & FHOURS>0 & BTYPE<5, na.rm=T)
+ins.catch$STRATUM<-17
+#Calculate inshore catch:
+inshore.catch<-ddply(ins.catch,.(YEAR,STRATUM),summarize,CATCH_KG=sum(WEIGHT),.drop=F)
 
-# Plot Gulf CPUE by vessel:
-Gulf.vessel.cpue<-ddply(Gulf.comlog,.(YEAR,BCODE),summarize,GULF_V_CPUE=mean(WEIGHT)/mean(trunc(FHOURS/100)+((FHOURS/100)-trunc(FHOURS/100))/0.6))
-ggplot(Gulf.vessel.cpue,aes(x=YEAR,y=GULF_V_CPUE)) + geom_line(aes(color=factor(BCODE))) + 
-  geom_point(aes(color=factor(BCODE))) + scale_x_continuous(name="YEAR",breaks=seq(1993, 2017, 3)) +
-  scale_y_continuous(name="CPUE (kg/hr)", breaks=seq(0,1000,200)) +
-  theme_bw() + ggtitle("Vessel Gulf CPUE") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+#OFFSHORE:
+#Select data that is offshore only (blat>451000	and	blong>592000) with records
+#that have WEIGHT and FHOURS that are not 0 or NA
+off.catch<-subset(shrimp.COMLOG, !(BLAT>451000 & BLONG>592000) & WEIGHT>0 & FHOURS>0 & BTYPE<4 & SFA!=16, na.rm=T)
+off.catch$STRATUM<-off.catch$SFA
+#Calculate offshore catch:
+offshore.catch<-ddply(off.catch,.(YEAR,STRATUM),summarize,CATCH_KG=sum(WEIGHT),.drop=F)
 
-#Table of data:
-Ann.Mth.CPUE<-merge(Gulf.cpue,Gulf.mth.cpue, id.vars="YEAR")
-Ann.Mth.Ves.CPUE<-merge(Ann.Mth.CPUE,Gulf.vessel.cpue,id.vars="YEAR")
+#Bring the ofshore and inshore files together, and sum by YEAR and SFA:
+combined.catch<-rbind(inshore.catch,offshore.catch)
+com.catch<-ddply(combined.catch,.(YEAR,STRATUM),summarize,TOT_CATCH_KG=sum(CATCH_KG),TOT_CATCH_MT=round(TOT_CATCH_KG/1000),.drop=F)
+catch.table<-reshape(com.catch,v.names="TOT_CATCH_MT",idvar="YEAR",timevar="STRATUM", direction='wide')
+#Catch value to be added to calculate exploitation rate against shrimp survey biomass (95-16SURVEY.MCD)
+#Exploitation rate goes in ESS_20XX
+com.catch.table<-catch.table[order(catch.table$YEAR),]
 
-#Plotting against TAC allocation:
-#Gulf can fish up to 25% (1993 to 1998), unknown for a few years, and 22.5% (2005 to now)
-#of annual TAC
-TAC.9317<-c(2650,3100,3170,3170,3600,3800,4800,5300,4700,2700,2700,3300,4608,4608,4820,4912,3475,4900,4432,3954,3496,4140,4140,2990,2392)
-Gulf.TAC<-c(662.50,775.00,792.50,792.50,900.00,950.00,1080.00,1192.50,1057.50,607.50,607.50,742.50,1036.80,1036.80,1084.50,1105.20,781.875,1102.50,997.20,889.65,786.60,931.50,931.50,672.75,538.20)
-str(Gulf.comlog)
-#catch conversion to mt:
-gulf.com.catch<-ddply(Gulf.comlog,.(YEAR),summarize,Ann_Catch_MT=round((sum(WEIGHT,na.rm=T)/1000),0))
+#Plot annual CPUE boxplot of inshore and offshore selection:
+box.unst.cpue<-rbind(off.comlog,ins.comlog)
+ggplot(subset(box.unst.cpue, CPUE>10),aes(YEAR,CPUE, group=YEAR)) + geom_boxplot() + theme_bw() +
+  scale_x_continuous(name="Year",breaks=seq(min(box.unst.cpue$YEAR), max(box.unst.cpue$YEAR), 2)) +
+  scale_y_continuous(name="Unstandardized CPUE (kg/hr)", breaks=seq(0,3500,500)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
 
-ann.TAC<-as.data.frame(cbind(YEAR=unique(Gulf.comlog$YEAR),TAC.MT=TAC.9317))
-ann.TAC.g<-as.data.frame(cbind(YEAR=unique(ann.TAC$YEAR),TAC.MT=ann.TAC$TAC.MT,Gulf.Pro=Gulf.TAC))
-ann.gulf.catch<-merge(annAC.g,gulf.com.catch,by=('YEAR'))
+#Plot monthly CPUE boxplot of inshore and offshore selection:
+ggplot(subset(box.unst.cpue, CPUE>10),aes(factor(YEAR),CPUE, group=YEAR)) + geom_boxplot() + facet_wrap(~MONTH)
 
-#Tracking gulf TAC allocation across years against their annual landings:
-catch.gulf<-melt(ann.gulf.catch,id.vars='YEAR')
-ggplot(catch.gulf,aes(x=YEAR,y=value)) + geom_bar(data=subset(catch.gulf, variable=="TAC.MT"),
-  stat=(position="identity"), fill="light blue") + geom_line(data=subset(catch.gulf, 
-  variable=="Ann_Catch_MT")) + geom_line(data=subset(catch.gulf,variable=="Gulf.Pro"),col="red") +
-  scale_x_continuous(name="Year",breaks=seq(1993, 2017, 3)) +
-  scale_y_continuous(name="Catch in tonnes (t)", breaks=seq(0,5000,500))
+#MERGE INSHORE WITH OFFSHORE CPUE
+comlog_4strat.cpue<-rbind(offshore.cpue, inshore.cpue)
+cpue.table<-reshape(comlog_4strat.cpue,v.names="AVG_CPUE",idvar="YEAR",timevar="STRATUM", direction='wide')
+comlog_4strat.cpue<-cpue.table[order(cpue.table$YEAR),]
+#print(comlog_4strat.cpue, digits=6)
 
-#Annual catch broken down by month:
+#MEAN ANNUAL CPUE
+str(comlog_4strat.cpue)
+rowMeans(x = comlog_4strat.cpue[,2:ncol(comlog_4strat.cpue)], na.rm = TRUE)
+mean<-rowMeans(x = comlog_4strat.cpue[,2:ncol(comlog_4strat.cpue)], na.rm = TRUE)
+unstd.mean.cpue<-cbind(comlog_4strat.cpue, mean)
+unstd.mean.cpue
 
-catch.percent<-ddply(ann.gulf.catch,.(YEAR), summarize,Perc_Ann_Catch=round((Ann_Catch_MT/TAC.MT)*100,0))
-glf.ann.catch<-merge(ann.gulf.catch,catch.percent,by=('YEAR'))
-mean(catch.percent$Perc_Ann_Catch)
+#MEAN ANNUAL COMMERCIAL CATCH ACROSS SFAs
+str(comlog_4strat.cpue)
+comlog_4strat.cpue$MEAN<-rowMeans(x = comlog_4strat.cpue[,3:ncol(comlog_4strat.cpue)], na.rm = TRUE)
+plot.mean<-melt(comlog_4strat.cpue,id.vars='YEAR')
+plot.mean$GRP=NA
+val1 <- which(is.na(plot.mean$value))
+plot.mean[val1,"GRP"]=1
+val2<- which(!is.na(plot.mean$value))
+plot.mean[val2,"GRP"]=2
 
-glf.month.catch<-ddply(Gulf.comlog,.(YEAR,MONTH),summarize,Mth_Catch_MT=round(sum(WEIGHT,na.rm=T)/1000,0))
-ann.TAC<-as.data.frame(cbind(YEAR=unique(Gulf.comlog$YEAR),TAC.MT=TAC.9317))
-mth.gulf.catch<-merge(ann.TAC,glf.month.catch,by=('YEAR'))
-mth.catch.percent<-ddply(mth.gulf.catch,.(YEAR,MONTH), summarize,Perc_Mth_Catch=round((Mth_Catch_MT/TAC.MT)*100,2))
-glf.mth.catch<-merge(mth.gulf.catch,mth.catch.percent, by=c('YEAR','MONTH'))
-glf.catch<-merge(glf.ann.catch,glf.mth.catch, by= c('YEAR','TAC.MT'))
-march.catch<-subset(glf.catch,MONTH==3)
+jpeg(filename="All_SFA_cpue.jpg")
+cb.color<-c("#999999", "#D55E00", "#0072B2","#009E73","black")
+ggplot(plot.mean, aes(YEAR,value, group=variable)) + 
+  expand_limits(y=c(0,900)) + 
+  geom_line(data=subset(plot.mean,variable=="AVG_CPUE.13"),aes(group='GRP',lty=variable,col=variable),lwd=1) + 
+  geom_line(data=subset(plot.mean,variable=="AVG_CPUE.14"),aes(group='GRP',lty=variable,col=variable),lwd=1) + 
+  geom_line(data=subset(plot.mean,variable=="AVG_CPUE.15"),aes(group='GRP',lty=variable,col=variable),lwd=1) + 
+  geom_line(data=subset(plot.mean,variable=="AVG_CPUE.17"),aes(group='GRP',lty=variable,col=variable),lwd=1) + 
+  geom_line(data=subset(plot.mean,variable=="MEAN"),aes(group='GRP',lty=variable,col=variable), lwd=1) + 
+  geom_point(data=subset(plot.mean,variable=="AVG_CPUE.13")) +
+  scale_linetype_manual("",labels=c("Stratum 13", "Stratum 14", "Stratum 15", "Stratum 17", "Mean"),values=c(2,3,4,5,1)) +
+  scale_color_manual("",labels=c("Stratum 13", "Stratum 14", "Stratum 15", "Stratum 17", "Mean"),values=cb.color) +
+  scale_x_continuous(name="Year",breaks=seq(min(plot.mean$YEAR), max(plot.mean$YEAR), 2)) +
+  scale_y_continuous(name="Unstandardized CPUE (kg/hr)", breaks=seq(0,900,150)) + theme_bw() + 
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),legend.position = c(0, 1), 
+        legend.justification = c(-0.5, 1.05)) 
+dev.off()    
 
-#March % catches only to identify ovigerous fishing in the early spring:
-ggplot(glf.ann.catch, aes(x=YEAR,y=Perc_Ann_Catch)) + 
-  coord_cartesian(xlim=c(1993,2017),ylim=c(0,100)) + geom_bar(aes(x=YEAR,y=Perc_Ann_Catch),stat=(position="identity")) +
-  geom_bar(data=march.catch,aes(x=YEAR,y=Perc_Mth_Catch),stat=(position="identity"), fill="blue") + 
-  geom_bar(data=ESS.march.catch,aes(x=YEAR,y=Perc_Mth_Catch),stat=(position="identity"), fill="orange") +
-  scale_x_continuous(name="Year",breaks=seq(1993, 2017, 3)) +
-  scale_y_continuous(name="Percent Catch (%)", breaks=seq(0,100,10)) + theme_bw() + ggtitle("March Gulf Catches") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+##############################################
+#STANDARDIZED TRAWL CPUE - GLM fishing April to July inclusively and only boats that have fished 7 years or more,
+#do not process onboard, and NS fleet only.  
+#Standarized to highliner, highest catch month and SFA
+head(shrimp.COMLOG) #48,751 RECORDS
+#Select for weights and hours not equal to zero and boat types from NS fleet only (1 & 2)
+comlog.clean<-subset(shrimp.COMLOG, WEIGHT>0 & FHOURS>0 & BTYPE<3, na.rm=T)
+str(comlog.clean) #27,847 RECORDS
 
-#Monthly overall:
-monthly.catch<-melt(glf.catch,id.vars =c('YEAR','MONTH'))
+comlog.dat<-comlog.clean[,c("BCODE", "FDATE", "YEAR", "MONTH", "SFA", "FHOURS", "WEIGHT", "CPUE")]
+head(comlog.dat)
 
-ggplot(monthly.catch,aes(MONTH,value,group=variable)) + 
-  geom_bar(data=subset(monthly.catch, variable=="Mth_Catch_MT"),
-  stat=(position="identity"), fill="light blue", color="black") + facet_wrap(~YEAR) +
-  scale_x_continuous(name="Month",breaks=seq(1, 12, 1)) +
-  scale_y_continuous(name="Catch (t)", breaks=seq(0,1000,250)) + theme_bw() + ggtitle("Monthly Gulf Catches") +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+#First, select April-July inclusive (months 4 to 7)
+month.filter<-comlog.dat[comlog.dat$MONTH>3 & comlog.dat$MONTH<8,]
+dim(month.filter)#19,572 RECORDS
 
-#Gulf and ESS commercial catch comparison:
-#ESS
-ESS.com.catch<-ddply(ESS.comlog,.(YEAR),summarize,Ann_Catch_MT=round((sum(WEIGHT,na.rm=T)/1000),0))
-ESS.ann.TAC<-as.data.frame(cbind(YEAR=unique(ESS.comlog$YEAR),TAC.MT=TAC.9317))
-ann.ESS.catch<-merge(ESS.ann.TAC,ESS.com.catch,by=('YEAR'))
-ESS.catch.percent<-ddply(ann.ESS.catch,.(YEAR), summarize,Perc_Ann_Catch=round((Ann_Catch_MT/TAC.MT)*100,0))
-ESS.ann.catch<-merge(ann.ESS.catch,ESS.catch.percent,by=('YEAR'))
-mean(ESS.catch.percent$Perc_Ann_Catch)
+#Plot annual boxplot of filtered data for selected months
+ggplot(month.filter,aes(YEAR,CPUE, group=YEAR)) + geom_boxplot() + theme_bw() +
+  scale_x_continuous(name="Year",breaks=seq(min(month.filter$YEAR), max(month.filter$YEAR), 2)) +
+  scale_y_continuous(name="Unstandardized CPUE (kg/hr)", breaks=seq(0,3500,500)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
 
-ESS.month.catch<-ddply(ESS.comlog,.(YEAR,MONTH),summarize,Mth_Catch_MT=round(sum(WEIGHT,na.rm=T)/1000,0))
-ESS.ann.TAC<-as.data.frame(cbind(YEAR=unique(ESS.comlog$YEAR),TAC.MT=TAC.9317))
-mth.ESS.catch<-merge(ESS.ann.TAC,ESS.month.catch,by=('YEAR'))
-ESS.mth.catch.percent<-ddply(mth.ESS.catch,.(YEAR,MONTH), summarize,Perc_Mth_Catch=round((Mth_Catch_MT/TAC.MT)*100,2))
-ESS.mth.catch<-merge(mth.ESS.catch,ESS.mth.catch.percent, by=c('YEAR','MONTH'))
-ESS.catch<-merge(ESS.ann.catch,ESS.mth.catch, by= c('YEAR','TAC.MT'))
-ESS.march.catch<-subset(ESS.catch,MONTH==3)
+#Plot monthly boxplot of filtered data for selected months
+ggplot(month.filter,aes(MONTH,CPUE, group=MONTH)) + geom_boxplot() + theme_bw() + facet_wrap(~YEAR) +
+  scale_x_continuous(name="MONTH", breaks=seq(4,7,1)) +
+  scale_y_continuous(name="Unstandardized CPUE (kg/hr)", breaks=seq(0,2500,500)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+
+#Plot SFA boxplot of filtered data for selected months
+ggplot(subset(month.filter, !is.na(SFA)),aes(MONTH,CPUE, group=MONTH)) + geom_boxplot() + theme_bw() + facet_wrap(~SFA) +
+  scale_x_continuous(name="MONTH", breaks=seq(4,7,1)) + ggtitle("All SFA") +
+  scale_y_continuous(name="Unstandardized CPUE (kg/hr)", breaks=seq(0,2500,500)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+
+#Plot Annual SFA boxplot of filtered data for selected months
+ggplot(subset(month.filter, SFA==13),aes(MONTH,CPUE, group=MONTH)) + geom_boxplot() + theme_bw() + facet_wrap(~YEAR) +
+  scale_x_continuous(name="Month", breaks=seq(4,7,1), labels=c('Apr', 'Jun', 'Jul', 'Aug')) + ggtitle("SFA 13") +
+  scale_y_continuous(name="Unstandardized CPUE (kg/hr)", breaks=seq(0,2500,500)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+
+ggplot(subset(month.filter, SFA==14),aes(MONTH,CPUE, group=MONTH)) + geom_boxplot() + theme_bw() + facet_wrap(~YEAR) +
+  scale_x_continuous(name="Month", breaks=seq(4,7,1), labels=c('Apr', 'Jun', 'Jul', 'Aug')) + ggtitle("SFA 14") +
+  scale_y_continuous(name="Unstandardized CPUE (kg/hr)", breaks=seq(0,2500,500)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+
+ggplot(subset(month.filter, SFA==15),aes(MONTH,CPUE, group=MONTH)) + geom_boxplot() + theme_bw() + facet_wrap(~YEAR) +
+  scale_x_continuous(name="Month", breaks=seq(4,7,1), labels=c('Apr', 'Jun', 'Jul', 'Aug')) + ggtitle("SFA 15")
+scale_y_continuous(name="Unstandardized CPUE (kg/hr)", breaks=seq(0,2500,500)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+
+#Plot monthly boxplot of filtered data for latest year
+ggplot(subset(month.filter, YEAR==2016),aes(MONTH,CPUE, group=MONTH)) + geom_boxplot() + theme_bw() +
+  scale_x_continuous(name="MONTH", breaks=seq(4,7,1)) +
+  scale_y_continuous(name="Unstandardized CPUE (kg/hr)", breaks=seq(0,2000,500)) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+
+#Second, include only boats that have fished for 7 years or more
+fishing.years = ddply(month.filter,.(BCODE), summarize, F.YR=length(unique(YEAR)))
+year.7plus.filter<-subset(fishing.years, F.YR>6)
+fish.filter<-subset(month.filter,BCODE %in% year.7plus.filter$BCODE)
+dim(fish.filter)#14,731 RECORDS
+
+#Finally, remove Final Venture and Island Provider, which are bcodes -'5631', '102680', the factory trawlers
+boat.filter<-subset(fish.filter, BCODE!=5631 & BCODE!=102680)
+
+#Create a filtered file containing unstandardized CPUE
+write.table(boat.filter,file="filtered_cpue.2017.txt") 
+#write.csv(boat.filter,paste("I:/Offline Data Files/Shrimp/Filtered.CPUE.Comlog.Data",Sys.Date(),".csv",sep=""), row.names=F)
+filtered.cpue<-boat.filter
+
+#Calculate annual unstandardized CPUE for the filtered file - Res Doc figure
+unstand.cpue<-ddply(filtered.cpue,.(YEAR),summarize,MEAN.CPUE=mean(CPUE,na.rm=T))
+write.table(unstand.cpue,file="unstand.CPUE_filtered.file.txt") 
+
+#Run the GLM
+ggplot(filtered.cpue,aes(YEAR,UNSTD_CPUE, fill=YEAR,color=YEAR)) + geom_violin() +
+  theme_bw(base_size = 12)
+
+#Add columns that transforms variables from numeric to factors:
+tt<-transform(filtered.cpue, FBCODE=as.factor(BCODE), FSFA=as.factor(SFA), FMONTH=as.factor(MONTH), FYEAR=as.factor(YEAR))
+
+#with Gaussian error distribution it is basically an ANOVA, but could try other error distributions
+M1 <- glm(formula = CPUE ~ factor(BCODE) + factor(YEAR) + factor(MONTH) + factor(SFA), family = gaussian, 
+          data = tt, na.action = na.exclude, 
+          control = list(epsilon = 0.0001, maxit = 50, trace = F))
+
+#Look at the summary of M1 and note the AIC number at the bottom, which is a measure of the complexity,
+#and goodness of fit of the GLM as it is defined
+summary(M1)
+
+#Run ANOVA to confirm significance of factors
+
+Anova(M1) #significance of factors
+
+#Plots dependent factors against CPUE:
+j2 = allEffects(M1)
+plot(j2) # plots fixing everything at their means but the var of interest
+
+#then look at the YEAR effect, which is essentially the GLM standardized CPUE estimate
+j$year
+str(j)
+
+#The "predict.val" dataframe holds the values at which I want predicted estimates.  
+##The example below is arbitrarily defined at the first row of all values except for all years.  
+##Because there are no interaction terms, changing this will only move the estimates up or down,
+##but will not actually change the temporal trend.
+
+predict.val = data.frame(BCODE=filtered.cpue$BCODE[1], YEAR=sort(unique(filtered.cpue$YEAR)), MONTH=filtered.cpue$MONTH[1],
+                         SFA=filtered.cpue$SFA[1])
+
+#To MANUALLY identify the highligher for the latest fishing year
+highliner.id<-ddply(subset(filtered.cpue,YEAR==2017),.(BCODE), summarize, MEAN_CPUE=mean(CPUE))
+
+#HARD CODED  - 2017 - FIXING BCODE AT MEAN OF HIGHLINER - 104885, MONTH AS MEAN IN JULY, SFA AS MEAN IN SFA14
+pred.val = data.frame(BCODE=as.factor(104885), YEAR=sort(unique(filtered.cpue$YEAR)), MONTH=as.factor(7), SFA=as.factor(14))
+
+#Run the GLM (M1) on newdata (predict.val)
+cpue.predict = predict( M1, newdata=pred.val, type = c("response"), se.fit=T)
+pred.val$cpue = cpue.predict $fit
+pred.val$cpue_se = cpue.predict $se.fit
+
+#Define the upper and lower CPUE bounds
+pred.val$u.bound = (pred.val$cpue + 2*pred.val$cpue_se)
+pred.val$l.bound = (pred.val$cpue - 2*pred.val$cpue_se)
+write.table(pred.val,file="Stand.Com.CPUE.txt") 
+

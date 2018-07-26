@@ -27,7 +27,7 @@
 ### MCassistaDaRos running and modifying code provided by DHardie/JBroome in ESS_Shrimp_2016.r
 ### Start: December 20, 2017 
 require(bio.shrimp)
-MMM = "Mike is awesome."
+
 #SURVEY DETAILS:
 #1 nautical mile = 1852 metres
 #1.25 nautical miles travelled during 30 minute tow at 2.5 knots
