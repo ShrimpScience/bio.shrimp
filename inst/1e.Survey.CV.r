@@ -69,7 +69,7 @@ cv.temp<-expand.grid.df(data.frame(YEAR=1982:2018),data.frame(STRATUM=c(13,14,15
 survey.cv.strat<-merge(svy.CV.strat,cv.temp,id.vars=c('YEAR','STRATUM'),all=TRUE)
 
 ggplot(survey.cv.strat,aes(x=YEAR,y=COEF_VAR)) + geom_line() + 
-  geom_point() + scale_x_continuous(name="YEAR",breaks=seq(1982, 2017, 5)) +
+  geom_point() + scale_x_continuous(name="Year",breaks=seq(1982, 2017, 5)) +
   scale_y_continuous(name="Coefficient of Variation", breaks=seq(0,250,50)) +
   theme_bw() + ggtitle("Survey CV by Stratum") + facet_wrap(~STRATUM) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())

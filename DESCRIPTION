@@ -12,7 +12,8 @@ Depends:
   car,
   reshape,
   gridExtra,
-  gdata
+  gdata,
+  dplyr
 Imports:
   devtools,
     bio.utilities

@@ -20,6 +20,7 @@
 #' @importFrom effects allEffects
 #' @importFrom gridExtra grid.arrange
 #' @importFrom gdata rename.vars
+#' @importFrom dplyr select
 #' 
 #' @author Manon Cassista-Da Ros, \email{manon.cassista-daros@@dfo-mpo.gc.ca}
 #' @export
@@ -35,7 +36,7 @@ require(bio.shrimp)
 strata.area.data<-read.csv("C:/Users/cassistadarosm/Documents/GitHub/bio.shrimp/datadirectory/data/Inputs/Survey/Strata.Surface.Area.csv",header=T)
 strata.area.data$Num_Units<-((strata.area.data$km2/40281)*1000000)
 
-################### Survey CPUE and Biomass ############################## 
+################################## Survey CPUE and Biomass ################################ 
 #Survey data query:
 shrimp.db('survey.redo', oracle.username=oracle.username, oracle.password = oracle.password)
 shrimp.db('survey', oracle.username=oracle.username, oracle.password = oracle.password)
@@ -47,17 +48,19 @@ head(shrimp.survey)
 #TABLE DATA:
 #Number of stations per year the survey has been running
 table(shrimp.survey$YEAR)
-#1982 1983 1984 1985 1986 1987 1988 1993 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 
-#  61   44   67   57   61   69   66   40   51   71   69   71   63   59   75   60   69   61   58   60   60   60   60 
-#2010 2011 2012 2013 2014 2015 2016 2017 2018 
-#  60   60   60   60   60   60   60   60   60 
-
+#1982 1983 1984 1985 1986 1987 1988 1993 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004  
+#  61   44   67   57   61   69   66   40   51   71   69   71   63   59   75   60   69   61   
+#2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018
+#  58   60   60   60   60  60   60   60   60   60   60   60   60   60
+  
 #Standardize catch to trawlable unit all data:
 # 1- Select successful tows only and year range for reporting (data range available: 1982 to 2017):
 shrimp.surv<-subset(shrimp.survey, SETCODE<3 & YEAR>1994)
 
-# 2- Replace WING==0/NA and H_HEADLINE==0/NA with mean of WING/H_HEADLINE measurement for that 
-# year's survey measurements
+# 2- For YEARS where WING was not extracted from net mensuration, the expected measurement was used.
+shrimp.surv[shrimp.surv$YEAR==2008,]$WING<-17.4
+
+# 3- Replace WING==0/NA and H_HEADLINE==0/NA with mean of WING/H_HEADLINE measurement for that year's survey measurements or theoretical value the measurement is none available
 y=unique(shrimp.surv$YEAR)
 for(i in 1:length(y)){
   mW = mean(shrimp.surv$WING[shrimp.surv$YEAR==y[i] & shrimp.surv$WING!=0], na.rm = T)
@@ -153,14 +156,13 @@ head(shrimp.surv)
 #Create table of standardized values to use with the Stratify function:
 #Calculate a mean, and standard deviation on catch by SFA:
 
-survey.dat<-select(shrimp.surv, YEAR,STRATUM,XSET,FINAL_CATCH)
-
-#survey.dat<-ddply(shrimp.surv,.(YEAR,STRATUM),summarize,AVG_STD_CATCH=mean(FINAL_CATCH),
-#           STDEV=sd(FINAL_CATCH,na.rm=T))
+survey.dat<-select(shrimp.surv, YEAR,STRATUM,XSET,CV_LONG,CV_LAT,TEMP,FINAL_CATCH)
+survey.dat$ID<-1:nrow(survey.dat) # Prep for spatial script
 
 #Plot Standardized survey catch:
-ggplot(survey.dat,aes(YEAR,AVG_STD_CATCH)) + geom_bar(stat='identity', position="stack")
+ggplot(survey.dat,aes(YEAR,FINAL_CATCH)) + geom_bar(stat='identity', position="stack")
 
+################################# CPUE Using Stratify #####################################
 #Run data through the stratify function one year at a time:
 strata.Shrimp<-rename(strata.area.data,c("Stratum"="Strata","km2"="Area","Num_Units"="NH"))
 
@@ -169,7 +171,7 @@ outputs2 <- as.data.frame(do.call(rbind,out))
 out <- list()
 m=0
 y=unique(survey.dat$YEAR)
-
+j=unique(survey.dat$STRATUM)
 for(i in 1:length(y)){
   SurveyCatchStd = survey.dat[survey.dat$YEAR==y[i]]
   SurveyCatchStd<-rename.vars(SurveyCatchStd, from='FINAL_CATCH', to='FINAL.CATCH')
@@ -184,8 +186,12 @@ for(i in 1:length(y)){
   d<-survey.CPUE$Strata
   print(y[i])
   print(survey.CPUE$Strata[i])
-  print(survey.CPUE$Mean[i])
-  print(SurveyCatchStd$AVG.STD.CATCH)
+  print(mean(survey.CPUE$yhi[i]$'13'))
+  print(mean(survey.CPUE$yhi[i]$'14'))
+  print(mean(survey.CPUE$yhi[i]$'15'))
+  print(mean(survey.CPUE$yhi[i]$'17'))
+
+  print(SurveyCatchStd$FINAL.CATCH)
   m=m+1
   out[[m]]<-c(y[i],d)
   out[[m]]<-c(Strata=survey.CPUE$Strata,Set=survey.CPUE$Sets,Mean=survey.CPUE$Mean,
