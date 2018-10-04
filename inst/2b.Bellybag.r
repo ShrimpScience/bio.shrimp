@@ -8,17 +8,8 @@
 #' @importFrom plyr ddply
 #' @importFrom RODBC odbcConnect
 #' @importFrom RODBC sqlQuery
-#' @importFrom bio.survey Prepare.strata.data
-#' @importFrom bio.survey Prepare.strata.file
-#' @importFrom bio.survey Stratify
-#' @importFrom bio.survey boot.strata
-#' @importFrom bio.lobster convert.dd.dddd
 #' @importFrom ggplot2 ggplot
-#' @importFrom reshape melt
-#' @importFrom car Anova
-#' @importFrom effects allEffects
-#' @importFrom gridExtra grid.arrange
-#' @importFrom gdata rename.vars
+#' @importFrom dplyr select
 
 #' 
 #' @author Manon Cassista-Da Ros, \email{manon.cassista-daros@@dfo-mpo.gc.ca}
@@ -28,7 +19,7 @@
 ### Start: September 20, 2018 
 require(bio.shrimp)
 
-################### Survey Juvenile Catch
+################### Survey O-Group Catch
 ################### Survey Belly Bag ############################## 
 #Survey Belly Bag data query:
 shrimp.db('Juveniles.redo', oracle.username=oracle.username, oracle.password = oracle.password)
@@ -58,15 +49,10 @@ table(Juv.dat$YEAR)
 #2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 
 #6095 6152 6516 5582 5923 5631 5593 6585 5883 5903 5491 4333 5163 4673 4688 4692 4919 
 
-#tot.num<-ddply(Juv.dat,.(YEAR,STRATUM,XSET),summarise,TOT.NUM=sum(XCOUNT))
-#xcount<-ddply(Juv.dat,.(YEAR,STRATUM,XSET,round(CARLEN)),summarize,XCOUNT=sum(XCOUNT))
-#null.ratio<-subset(Juv.dat,is.na(TOTNUM))
-
 #Calculate length frequency per stratum of survey belly bag catch:
 #Adjustment of the rounding function to round up when a CARLEN ends with .5
-round = function(x) trunc(x+0.5)
-
-juv.dat<-ddply(Juv.dat,.(YEAR,STRATUM,'CL.mm'=round(CARLEN)),summarize,FREQ=sum(XCOUNT*RATIO*(1.25/DIST), na.rm=T))
+#round = function(x) trunc(x+0.5)
+juv.dat<-ddply(Juv.dat,.(YEAR,STRATUM,CARLEN),summarize,FREQ=sum(XCOUNT*RATIO*(1.25/DIST), na.rm=T))
 juv.dat2<-ddply(Juv.dat,.(YEAR,STRATUM),summarize,TOT.SET=(length(unique(XSET))))
 ann.juv<-merge(juv.dat,juv.dat2, by=c('YEAR','STRATUM'))
 
@@ -77,20 +63,29 @@ BB.area<-select(shrimp.area,'STRATUM','BB_unit_area')
 
 #Add unit area to ann.juv file for calculations:
 juv.area<-merge(ann.juv, BB.area, by='STRATUM')
-
-juv.freq<-ddply(juv.area,.(YEAR,STRATUM,CL.mm),summarize,TOT.FREQ=sum(area.FREQ))
+area.freq<-ddply(juv.area,.(YEAR,STRATUM,CARLEN),summarize,AREA.FREQ=FREQ/TOT.SET*BB_unit_area)
 
 #Calculate estimates of belly bag numbers at length by stratum area:
-juv.sum<-ddply(juv.freq,.(YEAR,CL.mm),summarize,ess.FREQ=sum(TOT.FREQ))
+juv.sum<-ddply(area.freq,.(YEAR,CARLEN),summarize,ess.FREQ=sum(AREA.FREQ))
 
-#Subset carapace length between 6 and 10 mm inclusive:
-bb.size<-subset(juv.sum,CL.mm>5 & CL.mm<11)
-ess.bb<- ddply(bb.size,.(YEAR),summarize,ess.value=sum(ess.FREQ)/1000000)
+#Subset carapace length between 6 and 10 mm inclusive, indicative of o-group only:
+o.group<-subset(juv.sum,CARLEN>5.4 & CARLEN<10.0)
+ess.bb<- ddply(o.group,.(YEAR),summarize,ess.value=(sum(ess.FREQ)/1000000))
 
+# PLOT BELLY BAG number in Million:
+#Indicator Plot:
+jpeg(filename="bb_num.jpg")
+ry<-quantile(ess.bb$ess.value[ess.bb$YEAR>1999&ess.bb$YEAR<2011], probs=.33, na.rm=TRUE)
+yg<-quantile(ess.bb$ess.value[ess.bb$YEAR>1999&ess.bb$YEAR<2011], probs=.66, na.rm=TRUE)
+xmin=-Inf
+xmax=Inf
+ggplot(ess.bb, aes(YEAR,ess.value)) +
+  geom_rect(aes(xmin = xmin, xmax = xmax,ymin = -Inf, ymax = ry), fill = "red", alpha = 0.015) +
+  geom_rect(aes(xmin = xmin, xmax = xmax,ymin =187.0 , ymax = yg), fill = "yellow", alpha = 0.015) + 
+  geom_rect(aes(xmin = xmin, xmax = xmax,ymin = 365.7, ymax = Inf), fill = "green", alpha = 0.015) +
+  geom_hline(yintercept = yg,colour="dark green") + geom_hline(yintercept = ry,colour="red") + 
+  geom_point() + geom_line() + scale_x_continuous(name="Year",breaks=seq(min(ess.bb$YEAR), max(ess.bb$YEAR), 3)) +
+  scale_y_continuous(name="O Group 6 to 10 mm (Million)") + theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+dev.off() 
 
-
-juv.area$area.FREQ<-juv.area$FREQ/(juv.area$TOT.SET)*juv.area$BB_unit_area
-
-Juv.check<-subset(Juv.dat,YEAR==2017 & STRATUM==13 & CARLEN>19.4 & CARLEN<20.6)
-
-Juv.check$FREQ.check<-round(Juv.check$CARLEN)
