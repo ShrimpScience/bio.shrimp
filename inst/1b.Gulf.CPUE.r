@@ -12,11 +12,10 @@
 #' @importFrom reshape melt
 #' @importFrom effects allEffects
 #' @importFrom gridExtra grid.arrange
-#' @importFrom gdata rename.vars
+#' @importFrom dplyr select
 
 #' 
 #' @author Manon Cassista-Da Ros, \email{manon.cassista-daros@@dfo-mpo.gc.ca}
-#' @seealso \code{\link{template.function}}, \url{http://www.github.com/Beothuk/bio.template}
 #' @export
 
 ### MCassistaDaRos running and modifying code provided by DHardie/JBroome in ESS_Shrimp_2016.r
@@ -27,16 +26,16 @@ require(bio.shrimp)
 #Data Query:
 shrimp.db('ComLogs.redo', oracle.username=oracle.username, oracle.password = oracle.password)
 shrimp.db('ComLogs', oracle.username=oracle.username, oracle.password = oracle.password)
-str(shrimp.COMLOG) #49,043 RECORDS
+str(shrimp.COMLOG) #50,693 RECORDS
 head(shrimp.COMLOG)
 
 #TABLE DATA:
 #Number of records per year the commercial log data contains
 table(shrimp.COMLOG$YEAR)
-#1993 1994 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 
-#1082 1220 1184 1605 2151 1716 1720 1807 2049 1851 2144 1799 1949 2193 2265 2086 1628 2552 2400 
-#2012 2013 2014 2015 2016 2017
-#2579 2143 2794 2866 1829 1431 
+#1993 1994 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 
+#1082 1220 1184 1605 2151 1716 1720 1807 2049 1851 2144 1799 1949 2193 2265 2086 1628 2552 2400 2579 
+#2013 2014 2015 2016 2017 2018 
+#2143 2794 2866 1829 1551 1530 
 
 #Gulf Commercial Landings only:
 Gulf.comlog<-subset(shrimp.COMLOG, WEIGHT>0 & FHOURS>0 & BTYPE==3, na.rm=T)
@@ -46,35 +45,36 @@ ESS.comlog<-subset(shrimp.COMLOG, WEIGHT>0 & FHOURS>0 & BTYPE==1, na.rm=T)
 #Calculate annual CPUE (Kg/Hr):
 #Converts effort from FHOURS to HOURS and DECIMAL HOURS
 Gulf.cpue<-ddply(Gulf.comlog,.(YEAR),summarize,GULF_CPUE=mean(WEIGHT)/mean(trunc(FHOURS/100)+((FHOURS/100)-trunc(FHOURS/100))/0.6))
->Gulf.cpue
+#> Gulf.cpue
 #   YEAR GULF_CPUE
-#1  1993     187.9
-#2  1994     213.5
-#3  1995     187.0
-#4  1996     244.6
-#5  1997     236.3
-#6  1998     343.7
-#7  1999     395.7
-#8  2000     383.7
-#9  2001     428.2
-#10 2002     572.4
-#11 2003     675.4
-#12 2004     793.1
-#13 2005     683.3
-#14 2006     716.4
-#15 2007     696.6
-#16 2008     664.1
-#17 2009     648.8
-#18 2010     536.2
-#19 2011     671.2
-#20 2012     520.9
-#21 2013     626.7
-#22 2014     418.7
-#23 2015     571.0
-#24 2016     547.8
-#25 2017     442.6
+#1  1993  187.8945
+#2  1994  213.5222
+#3  1995  187.0250
+#4  1996  244.5779
+#5  1997  236.2569
+#6  1998  343.7272
+#7  1999  395.7043
+#8  2000  383.6622
+#9  2001  428.2413
+#10 2002  572.3568
+#11 2003  675.4131
+#12 2004  793.1381
+#13 2005  683.2539
+#14 2006  716.4012
+#15 2007  696.6164
+#16 2008  664.0719
+#17 2009  648.7635
+#18 2010  536.2323
+#19 2011  671.1786
+#20 2012  520.8509
+#21 2013  626.6835
+#22 2014  418.6887
+#23 2015  570.9731
+#24 2016  547.7843
+#25 2017  442.6426
+#26 2018  367.3180
 
-# These Gulf CPUE values are in ess_2017 spreadsheet
+# These Gulf CPUE values are in ess_2018 spreadsheet
 
 ######################################### GRAPHICS ################################################
 # PLOT Gulf CPUE:
@@ -117,7 +117,7 @@ Ann.Mth.Ves.CPUE<-merge(Ann.Mth.CPUE,Gulf.vessel.cpue,id.vars="YEAR")
 #Plotting against TAC allocation:
 #Gulf can fish up to 25% (1993 to 1998), unknown for a few years, and 22.5% (2005 to now)
 #of annual TAC
-TAC.9317<-c(2650,3100,3170,3170,3600,3800,4800,5300,4700,2700,2700,3300,4608,4608,4820,4912,3475,4900,4432,3954,3496,4140,4140,2990,2392)
+TAC.9318<-c(2650,3100,3170,3170,3600,3800,4800,5300,4700,2700,2700,3300,4608,4608,4820,4912,3475,4900,4432,3954,3496,4140,4140,2990,2392,2392)
 Gulf.TAC<-c(662.50,775.00,792.50,792.50,900.00,950.00,1080.00,1192.50,1057.50,607.50,607.50,742.50,1036.80,1036.80,1084.50,1105.20,781.875,1102.50,997.20,889.65,786.60,931.50,931.50,672.75,538.20)
 str(Gulf.comlog)
 #catch conversion to mt:
@@ -171,7 +171,7 @@ ggplot(monthly.catch,aes(MONTH,value,group=variable)) +
 #Gulf and ESS commercial catch comparison:
 #ESS
 ESS.com.catch<-ddply(ESS.comlog,.(YEAR),summarize,Ann_Catch_MT=round((sum(WEIGHT,na.rm=T)/1000),0))
-ESS.ann.TAC<-as.data.frame(cbind(YEAR=unique(ESS.comlog$YEAR),TAC.MT=TAC.9317))
+ESS.ann.TAC<-as.data.frame(cbind(YEAR=unique(ESS.comlog$YEAR),TAC.MT=TAC.9318))
 ann.ESS.catch<-merge(ESS.ann.TAC,ESS.com.catch,by=('YEAR'))
 ESS.catch.percent<-ddply(ann.ESS.catch,.(YEAR), summarize,Perc_Ann_Catch=round((Ann_Catch_MT/TAC.MT)*100,0))
 ESS.ann.catch<-merge(ann.ESS.catch,ESS.catch.percent,by=('YEAR'))

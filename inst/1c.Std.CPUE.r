@@ -27,16 +27,16 @@ require(bio.shrimp)
 #Data Query:
 shrimp.db('ComLogs.redo', oracle.username=oracle.username, oracle.password = oracle.password)
 shrimp.db('ComLogs', oracle.username=oracle.username, oracle.password = oracle.password)
-str(shrimp.COMLOG) #49,418 RECORDS
+str(shrimp.COMLOG) #50,693 RECORDS
 head(shrimp.COMLOG)
 
 #TABLE DATA:
 #Number of records per year the commercial log data contains
 table(shrimp.COMLOG$YEAR)
-#1993 1994 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 
-#1082 1220 1184 1605 2151 1716 1720 1807 2049 1851 2144 1799 1949 2193 2265 2086 1628 2552 2400 
-#2012 2013 2014 2015 2016 2017 2018 
-#2579 2143 2794 2866 1829 1551  255
+#1993 1994 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 
+#1082 1220 1184 1605 2151 1716 1720 1807 2049 1851 2144 1799 1949 2193 2265 2086 1628 2552 2400 2579 2143 
+#2014 2015 2016 2017 2018 
+#2794 2866 1829 1551 1530 
 
 #Calculate CPUE by record before filtering:
 shrimp.COMLOG$CPUE<-(shrimp.COMLOG$WEIGHT/((trunc(shrimp.COMLOG$FHOURS/100)+((shrimp.COMLOG$FHOURS/100)-trunc(shrimp.COMLOG$FHOURS/100))/0.6)))
@@ -69,10 +69,10 @@ trap.inshore$TYPE<-'TRAP'
 #Combined overall catch table(populates figure 6 in ResDoc):
 catch.all<-rbind(off.comlog,ins.comlog,trap.inshore)
 write.xlsx(catch.all, file= "C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/All.Catch.for.GIS.2018.xlsx")
-catch.table<-ddply(catch.all,.(YEAR,STRATUM,TYPE),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=round(sum(WEIGHT/1000),2))
-catchSFA.table<-ddply(catch.all,.(YEAR,STRATUM),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=round(sum(WEIGHT/1000),2))
+catch.table<-ddply(catch.all,.(YEAR,STRATUM,TYPE),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=sum(WEIGHT/1000))
+catchSFA.table<-ddply(catch.all,.(YEAR,STRATUM),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=sum(WEIGHT/1000))
 catch.strata17<-subset(catch.all,TYPE %in% c("INSHORE","TRAP"))
-catch17.table<-ddply(catch.strata17,.(YEAR),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=round(sum(WEIGHT/1000),2))
+catch17.table<-ddply(catch.strata17,.(YEAR),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=sum(WEIGHT/1000))
 catch17.table$STRATUM<-17
 catch17.table$TYPE<-'COMBO'
 catch<-rbind(catch.table,catch17.table)
@@ -87,8 +87,7 @@ write.xlsx(catch,file="C:/Users/cassistadarosm/Documents/SHRIMP/Data/Spreadsheet
 table(shrimp.COMLOG$BTYPE,shrimp.COMLOG$SFA)
 
 # OFFSHORE SELECTION:
-off.comlog<-subset(shrimp.COMLOG, !(BLAT>451000 && BLONG>592000) & SFA!=16 & WEIGHT>0 & FHOURS>0 & BTYPE<4 &
-                     !(BCODE %in% c(5631,102680)), na.rm=F)
+off.comlog<-subset(shrimp.COMLOG, !(BLAT>451000 && BLONG>592000) & SFA!=16 & WEIGHT>0 & FHOURS>0 & BTYPE<4 & !(BCODE %in% c(5631,102680)), na.rm=F)
 off.comlog$STRATUM<-off.comlog$SFA
 offshore.catch<-ddply(off.comlog,.(YEAR,STRATUM),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=round(sum(WEIGHT/1000)),EFFORT_HR=sum(FHOURS))
 offshore.cpue<-ddply(off.comlog,.(YEAR,STRATUM),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=sum(WEIGHT/1000),AVG_CPUE=mean(CPUE))
@@ -102,7 +101,7 @@ inshore.cpue
 
 #TRAP SELECTION:
 trap.comlog<-subset(shrimp.COMLOG, BTYPE==4)
-#Trapping occurs in 2 SFAs, SFGA 16 and 17
+#Trapping occurs in 2 SFAs, SFA 16 and 17
 #table(trap.comlog$SFA)
 #16    17 
 #1027 10256 

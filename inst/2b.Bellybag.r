@@ -71,6 +71,27 @@ juv.sum<-ddply(area.freq,.(YEAR,CARLEN),summarize,ess.FREQ=sum(AREA.FREQ))
 #Subset carapace length between 6 and 10 mm inclusive, indicative of o-group only:
 o.group<-subset(juv.sum,CARLEN>5.4 & CARLEN<10.0)
 ess.bb<- ddply(o.group,.(YEAR),summarize,ess.value=(sum(ess.FREQ)/1000000))
+#> ess.bb
+#   YEAR ess.value
+#1  2002 959.55861
+#2  2003 184.05267
+#3  2004 320.40473
+#4  2005 179.95833
+#5  2006  56.98775
+#6  2007 188.69760
+#7  2008 466.64833
+#8  2009 530.17892
+#9  2010 194.28812
+#10 2011  85.60169
+#11 2012  86.26389
+#12 2013  20.10908
+#13 2014 786.85887
+#14 2015 276.39244
+#15 2016 107.85314
+#16 2017  82.33739
+#17 2018 264.31864
+
+# These o-group values are in ess_2018 spreadsheet
 
 # PLOT BELLY BAG number in Million:
 #Indicator Plot:
