@@ -42,8 +42,8 @@ shrimp.db = function( DS="complete.redo", oracle.server="PTRAN", oracle.username
         # survey
         con = odbcConnect(oracle.server, uid=oracle.username, pwd=oracle.password, believeNRows=F) # believeNRows=F required for oracle db's
         shrimp.survey<-sqlQuery(con,"select * from SHRIMP.SHRSURVEY")
-        shrimp.survey$CV_LAT<-bio.utilities::convert.dd.dddd(shrimp.survey$BLAT)/100
-        shrimp.survey$CV_LONG<-bio.utilities::convert.dd.dddd(shrimp.survey$BLONG)/100*-1
+        shrimp.survey$CV_LAT<-bio.utilities::convert.dd.dddd(shrimp.survey$BLAT/100)
+        shrimp.survey$CV_LONG<-bio.utilities::convert.dd.dddd(shrimp.survey$BLONG/100)*-1
         shrimp.survey$YEAR<-year(shrimp.survey$FDATE)
         save(shrimp.survey, file=file.path( fnODBC, "shrimp.survey.rdata"), compress=T)
         write.csv(shrimp.survey,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/Shrimp/Survey.Data.",Sys.Date(),".csv",sep=""), row.names=F)
@@ -61,8 +61,8 @@ shrimp.db = function( DS="complete.redo", oracle.server="PTRAN", oracle.username
       if (DS=="ComLogs.redo") {
         con = odbcConnect(oracle.server , uid=oracle.username, pwd=oracle.password, believeNRows=F) # believeNRows=F required for oracle db's
         shrimp.COMLOG<-sqlQuery(con,"select * from SHRIMP.SHRCOMLOG")
-        shrimp.COMLOG$CV_LAT<-convert.dd.dddd(shrimp.COMLOG$BLAT)/100
-        shrimp.COMLOG$CV_LONG<-convert.dd.dddd(shrimp.COMLOG$BLONG)/100*-1
+        shrimp.COMLOG$CV_LAT<-convert.dd.dddd(shrimp.COMLOG$BLAT/100)
+        shrimp.COMLOG$CV_LONG<-convert.dd.dddd(shrimp.COMLOG$BLONG/100)*-1
         shrimp.COMLOG$YEAR<-year(shrimp.COMLOG$FDATE)
         shrimp.COMLOG$MONTH<-month(shrimp.COMLOG$FDATE)
         save(shrimp.COMLOG, file=file.path( fnODBC, "shrimp.comlog.rdata"), compress=T)
@@ -80,8 +80,8 @@ shrimp.db = function( DS="complete.redo", oracle.server="PTRAN", oracle.username
         #browser()
         con = odbcConnect(oracle.server , uid=oracle.username, pwd=oracle.password, believeNRows=F) # believeNRows=F required for oracle db's
         shrimp.DETAILS<-sqlQuery(con,"select * from SHRIMP.SHRDETAIL")
-        shrimp.DETAILS$CV_LAT<-convert.dd.dddd(shrimp.DETAILS$LAT)/100
-        shrimp.DETAILS$CV_LONG<-convert.dd.dddd(shrimp.DETAILS$XLONG)/100*-1
+        shrimp.DETAILS$CV_LAT<-convert.dd.dddd(shrimp.DETAILS$LAT/100)
+        shrimp.DETAILS$CV_LONG<-convert.dd.dddd(shrimp.DETAILS$XLONG/100)*-1
         shrimp.DETAILS$YEAR<-year(shrimp.DETAILS$FDATE)
         shrimp.DETAILS$MONTH<-month(shrimp.DETAILS$FDATE)
         save(shrimp.DETAILS, file=file.path( fnODBC, "shrimp.detail.rdata"), compress=T)
