@@ -115,7 +115,7 @@ Ann.Mth.Ves.CPTH<-merge(Ann.Mth.CPTH,Trap.vessel.cpth,id.vars="YEAR")
 #Plotting against TAC allocation:
 #From 1996 to 1999, trap catch was not included in TAC. In 1999, trappers can fish up to 10% of TAC
 #until 2005.  From 2005 up until now, trappers catch up to 8% of TAC.
-TAC.9617<-c(3170,3600,3800,4800,5300,4700,2700,2700,3300,4608,4608,4820,4912,3475,4900,4432,3954,3496,4140,4140,2990,2392)
+TAC.9618<-c(3170,3600,3800,4800,5300,4700,2700,2700,3300,4608,4608,4820,4912,3475,4900,4432,3954,3496,4140,4140,2990,2392,2392)
 Trap.TAC<-c(NA,NA,NA,480.00,530.00,470.00,270.00,270.00,330.00,368.64,368.64,385.60,392.96,278.00,392.00,354.56,316.32,279.68,331.20,331.20,239.20,191.36)
 str(Trap.comlog)
 #catch conversion to mt:

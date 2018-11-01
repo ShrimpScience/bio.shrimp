@@ -44,7 +44,7 @@ table(shrimp.survey$YEAR)
 #Main Trawl Survey data query:
 shrimp.db('Details.redo', oracle.username=oracle.username, oracle.password = oracle.password)
 shrimp.db('Details', oracle.username=oracle.username, oracle.password = oracle.password)
-str(shrimp.DETAILS) #1,235,065 RECORDS
+str(shrimp.DETAILS) #1,235,063 RECORDS
 write.csv(shrimp.DETAILS,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/ShrimpDetails.Data",Sys.Date(),".csv",sep=""), row.names=F)
 head(shrimp.DETAILS)
 
@@ -85,11 +85,12 @@ MT.area<-select(shrimp.area,'STRATUM','T_unit_area')
 #Add unit area to ann.dat file for calculations:
 MainTrawl.area<-merge(ann.mt, MT.area, by='STRATUM')
 area.freq<-ddply(MainTrawl.area,.(YEAR,STRATUM,CL_MM),summarize,AREA.FREQ=FREQ/TOT.SET*T_unit_area)
+write.csv(area.freq,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/SurvStratPopCalc.Data",Sys.Date(),".csv",sep=""), row.names=F)
 
 #Calculate annual estimates of main trawl biomass at length by stratum area:
 #This value is used as total population estimates in 2d.MainTrawl.Classes
-mt.sum<-ddply(area.freq,.(YEAR,CL_MM),summarize,ess.FREQ=sum(AREA.FREQ))
-write.csv(mt.sum,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/SurvTotPopCalc.Data",Sys.Date(),".csv",sep=""), row.names=F)
+mt.sum<-ddply(area.freq,.(YEAR,CL_MM),summarize,ess.FREQ=sum(AREA.FREQ,na.rm=T))
+write.csv(mt.sum,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/SurvMTPopCalc95-18.Data",Sys.Date(),".csv",sep=""), row.names=F)
 
 #Calculate annual biomass values in Millions:
 ess.mt<- ddply(mt.sum,.(YEAR),summarize,ess.value=(sum(ess.FREQ, na.rm=T)/1000000))

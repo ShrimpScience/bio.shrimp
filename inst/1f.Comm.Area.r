@@ -1,4 +1,4 @@
-#' @title 1e.Comm.Area
+#' @title 1f.Comm.Area
 #' @description Calculates a count of areas with Commercial catch standard indicator as part of the Abundance Characteristics in our assessment 
 #' @param sfa defines the specific SFA for the commercial logs
 #' @param yrs is the years to estimate
@@ -8,178 +8,146 @@
 #' @importFrom plyr ddply
 #' @importFrom RODBC odbcConnect
 #' @importFrom RODBC sqlQuery
-#' @importFrom bio.survey Prepare.strata.data
-#' @importFrom bio.survey Prepare.strata.file
-#' @importFrom bio.survey Stratify
-#' @importFrom bio.survey boot.strata
-#' @importFrom bio.lobster convert.dd.dddd
 #' @importFrom ggplot2 ggplot
 #' @importFrom reshape melt
-#' @importFrom car Anova
-#' @importFrom effects allEffects
-#' @importFrom gridExtra grid.arrange
+#' @importFrom PBSMapping makeGrid
 #' @importFrom gdata rename.vars
-
+#' @importFrom devtools install_github
+#' @importFrom SpatialHub gridData
+#' @importFrom SpatialHub bioMap
+#' @importFrom RColorBrewer brewer.pal
 #' 
 #' @author Manon Cassista-Da Ros, \email{manon.cassista-daros@@dfo-mpo.gc.ca}
-#' @seealso \code{\link{template.function}}, \url{http://www.github.com/Beothuk/bio.template}
 #' @export
 
 ### MCassistaDaRos running and modifying code provided by DHardie/JBroome in ESS_Shrimp_2016.r
-### Start: December 20, 2017 
+### Start: October 26, 2018 
 require(bio.shrimp)
+install_github("BradHubley/SpatialHub")
+library(SpatialHub)
 
-################### Commercial Catches
-################### Survey CPUE and Biomass ############################## 
-#Survey data query:
-shrimp.db('survey.redo', oracle.username=oracle.username, oracle.password = oracle.password)
-shrimp.db('survey', oracle.username=oracle.username, oracle.password = oracle.password)
-str(shrimp.survey) #1892 RECORDS
-#write.csv(shrimp.survey,paste("I:/Offline Data Files/Shrimp/Survey.Data",Sys.Date(),".csv",sep=""), row.names=F)
-head(shrimp.survey)
+##################################### Commercial Logbook Data ########################################## 
+#Data Query:
+shrimp.db('ComLogs.redo', oracle.username=oracle.username, oracle.password = oracle.password)
+shrimp.db('ComLogs', oracle.username=oracle.username, oracle.password = oracle.password)
+
+write.csv(shrimp.COMLOG,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/ShrimpComlog.Data",Sys.Date(),".csv",sep=""), row.names=F)
+#shrimp.COMLOG<-read.csv("C:/Users/cassi/Documents/Workfiles/ShrimpComlog.Data2018-10-26.csv",sep=",")
+
+str(shrimp.COMLOG) #50,690 RECORDS
+head(shrimp.COMLOG)
+
+#Calculate CPUE by record before filtering:
+shrimp.COMLOG$CPUE<-(shrimp.COMLOG$WEIGHT/((trunc(shrimp.COMLOG$FHOURS/100)+((shrimp.COMLOG$FHOURS/100)-trunc(shrimp.COMLOG$FHOURS/100))/0.6)))
 
 #TABLE DATA:
-#Number of stations per year the survey has been running
-table(shrimp.survey$YEAR)
-#1982 1983 1984 1985 1986 1987 1988 1993 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 
-#61   44   67   57   61   69   66   40   51   71   69   71   63   59   75   60   69   61   58   60 
-#2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 
-#60   60   60   60   60   60   60   60   60   60   60 
+#Number of records per year the commercial log data contains
+table(shrimp.COMLOG$YEAR)
+#1993 1994 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 
+#1082 1220 1184 1605 2151 1716 1720 1807 2049 1851 2144 1799 1949 2193 2265 2086 1628 2552 2400  
+#2012 2013 2014 2015 2016 2017 2018 
+#2579 2143 2794 2866 1829 1551 1527 
 
-#Standardize catch to trawlable unit all data:
-#1 nautical mile = 1852 metres
+#Commercial areas are filtered using records where weight and hours are not 0, CV_LAT/CV_LONG are not 0 or NA, where survey records, and SFA 16 records are excluded:
+com.select<-subset(shrimp.COMLOG, WEIGHT>0 & FHOURS>0 & BTYPE !=4 & CV_LAT!=0.0 & CV_LONG!="NA" & SFA<16) 
+str(com.select)#38,057 RECORDS
 
-#
-# 1- Select successful tows only and year range for reporting (data range available: 1982 to 2017):
-shrimp.surv<-subset(shrimp.survey, SETCODE<3 & YEAR>1994)
+#######################################Brad's Code:
+com.select <- rename(com.select,c('CV_LAT'='Y','CV_LONG'='X'))
+xl = range(com.select$X,na.rm=T)
+yl = range(com.select$Y,na.rm=T)
 
-# 2- In YEAR==1996, there was some comparative work.There are 11 tows done with the Cody & Kathryn, 
-# and those are excluded from analyses:
-shrimp.surv2<-subset(shrimp.surv, CRUISE!="CK9601")
+data = com.select[,c("YEAR","X","Y","CPUE")]
+data$EID = 1:nrow(data)
 
-# 3- For YEARS where WING was not extracted from net mensuration, the expected measurement was used.
-# In the case of YEARS where partial net mensuration data is available, the mean wing measurement
-# was calculated and used in the standardization.  Values were hardcoded in the database for all 
-# years except for 2006-07 
-shrimp.surv2[shrimp.surv2$YEAR==2008,]$WING<-17.4
+yrs = sort(unique(data$YEAR))
 
-# 4- Replace WING==0/NA H_HEADLINE==0/NA with mean of WING/H_HEADLINE measurement for that 
-# year's survey measurements
-y=unique(shrimp.surv2$YEAR)
-for(i in 1:length(y)){
-  mW = mean(shrimp.surv2$WING[shrimp.surv2$YEAR==y[i] & shrimp.surv2$WING!=0], na.rm = T)
-  mH = mean(shrimp.surv2$H_HEIGHT[shrimp.surv2$YEAR==y[i] & shrimp.surv2$H_HEIGHT!=0], na.rm = T)
-  shrimp.surv2$WING[shrimp.surv2$YEAR==y[i]&is.na(shrimp.surv2$WING)]=mW
-  shrimp.surv2$H_HEIGHT[shrimp.surv2$YEAR==y[i]&is.na(shrimp.surv2$H_HEIGHT)]=mH
-  shrimp.surv2$WING[shrimp.surv2$YEAR==y[i]&shrimp.surv2$WING==0]=mW
-  shrimp.surv2$H_HEIGHT[shrimp.surv2$YEAR==y[i]&shrimp.surv2$H_HEIGHT==0]=mH
+gt150=c()
+gt250=c()
+gt350=c()
+gt450=c()
+
+### I set it up as a loop but run it one year at a time by changing i=1, i=2, etc. to see how it goes
+
+i=23
+for(i in 1:length(yrs)){
+  
+cpueGrids = gridData(na.omit(subset(data,YEAR==yrs[i],c("EID","X","Y","CPUE"))), lvls= c(0,150,250,350,450), FUN=mean, grid.size=1.852,aspr=1,border=NA )
+  
+  bioMap(xlim=xl,ylim=yl,poly.lst=cpueGrids)
+  contLegend('topright',lvls = cpueGrids$lvls,Cont.data = cpueGrids, title="CPUE")
+  
+  gt150[i]= sum(cpueGrids$polyData$Z>150)
+  gt250[i]= sum(cpueGrids$polyData$Z>250)
+  gt350[i]= sum(cpueGrids$polyData$Z>350)
+  gt450[i]= sum(cpueGrids$polyData$Z>450)
+  
 }
+##################################################
+#Add standard unit area values:
+shrimp.area<-read.csv("C:/Users/cassistadarosm/Documents/GitHub/bio.shrimp/datadirectory/data/Inputs/Survey/UnitAreaStandards.csv",header=T)
 
-#Standardize catches and calculate density:
-shrimp.surv2$STD_CATCH<-shrimp.surv2$WEIGHT*(17.4/shrimp.surv2$WING)*((1.25*1852)/(shrimp.surv2$DIST*1852))
-shrimp.surv2$DENSITY<-shrimp.surv2$WEIGHT*1000/(shrimp.surv2$DIST*1852*shrimp.surv2$WING)
+#One minute square aggregation of commercial fishing positions:
+ji <- function(xy, origin=c(0,0), cellsize=c(.001,.001)) {
+  t(apply(xy, 1, function(z) cellsize/2+origin+cellsize*(floor((z - origin)/cellsize))))
+}
+JI <- ji(cbind(com.select$CV_LONG, com.select$CV_LAT))
+com.select$X <- JI[, 1]
+com.select$Y <- JI[, 2]
+com.select$Cell <- paste(com.select$X, com.select$Y)
 
-#Calculate a mean, standard deviation and coefficient of variation on catch by SFA:
-survey.dat<-ddply(shrimp.surv2,.(YEAR,SFA),summarize,MSTD_CATCH=mean(STD_CATCH,na.rm=T),
-                  STDEV=sd(STD_CATCH,na.rm=T))
-head(survey.dat)
-
-#Plot Standardized survey catch:
-ggplot(survey.dat,aes(YEAR,MSTD_CATCH)) + geom_bar(stat='identity', position="stack")
-
-#Isolate last survey year:
-survey.2017<-subset(shrimp.surv2,YEAR==2017)
-
-#survey.lyear<-cbind.data.frame(SFA=survey.2016$SFA,STD.CATCH=survey.2016$STD_CATCH)
-#head(survey.lyear)
-
-survey.lyear = survey.2017[,c("SFA","STD_CATCH")]
+cpue.position<-ddply(com.select,.(YEAR,Cell),summarize,AVG.CPUE=mean(CPUE))
+a<-subset(cpue.position,YEAR==2014)
 
 
-#survey.2017<-subset(shrimp.surv2,YEAR==2017)
-survey.last.year<-ddply(survey.2017,.(YEAR,SFA),summarize,TOT_WEIGHT=sum(WEIGHT), TOT_CATCH=sum(STD_CATCH),
-                        MEAN_CATCH=mean(STD_CATCH))
-head(survey.last.year)
+com.select$ID<-paste(round(com.select$CV_LAT,2),round(com.select$CV_LONG,2),sep = ".")
+samp.size.cpue<-with(rec.with.pos,tapply(ID,ID,length))			 
+ss.cpue<-data.frame(ID=names(samp.size.cpue),N=samp.size.cpue)
+POS.CNT<-merge(rec.with.pos,ss.cpue,all=T)
+POS.CNT$ID<-paste(round(POS.CNT$CV_LAT,2),round(POS.CNT$CV_LONG,2),sep = ".")
+cpue.out<-subset(POS.CNT,YEAR>2013 & YEAR<2018)
+cpue.position<-ddply(cpue.out,.(YEAR,ID),summarize,AVG.CPUE=mean(CPUE))
+
+CPUE.T1=which(cpue.position$AVG.CPUE > 150) 
+cpue.position[CPUE.T1,"CPUE.TARGET"]=">150"
+CPUE.T2=which(cpue.position$AVG.CPUE > 250) 
+cpue.position[CPUE.T2,"CPUE.TARGET"]=">250"
+CPUE.T3=which(cpue.position$AVG.CPUE > 350) 
+cpue.position[CPUE.T3,"CPUE.TARGET"]=">350"
+CPUE.T4=which(cpue.position$AVG.CPUE > 450) 
+cpue.position[CPUE.T4,"CPUE.TARGET"]=">450"
+CPUE.T5=which(cpue.position$AVG.CPUE < 150) 
+cpue.position[CPUE.T5,"CPUE.RANGE"]="<150"
+CPUE.T6=which(cpue.position$AVG.CPUE > 150 & cpue.position$AVG.CPUE < 251) 
+cpue.position[CPUE.T6,"CPUE.RANGE"]="150-250"
+CPUE.T7=which(cpue.position$AVG.CPUE > 250 & cpue.position$AVG.CPUE < 251) 
+cpue.position[CPUE.T5,"CPUE.RANGE"]="<150"
+CPUE.T5=which(cpue.position$AVG.CPUE < 150) 
+cpue.position[CPUE.T5,"CPUE.RANGE"]="<150"
+CPUE.T5=which(cpue.position$AVG.CPUE < 150) 
+cpue.position[CPUE.T5,"CPUE.RANGE"]="<150"
 
 
-#Bootstrap stratified standardized catch rate
-#Use Stratify function from S.Smith 
-#Create dataframe that contains the strata, the area in km2, 
-#Data Formatting Requirements:
-#Strata = SFA, Area = the area of the SFA in km2, NH = total number of possible sets in area
-strata.Shrimp<-data.frame(Strata=c(13,14,15,17),Area=c(1620,1517,948,1415),NH=c(40207.55862,37653.07586,23535.30115,35128.22422))
-strata.Shrimp
 
-#SurveyCatchStd<-survey.lyear[,c("SFA","STD.CATCH")]
-SurveyCatchStd<-survey.lyear
-SurveyCatchStd$STRATA.ID=SurveyCatchStd$Strata=SurveyCatchStd$SFA
-str(SurveyCatchStd)
-#'data.frame':	60 obs. of  4 variables:
-#$ SFA      : int  15 15 15 15 15 15 15 15 15 15 ...
-#$ STD_CATCH: num  60 75.4 69.3 98.4 105.3 ...
-#$ Strata   : int  15 15 15 15 15 15 15 15 15 15 ...
-#$ STRATA.ID: int  15 15 15 15 15 15 15 15 15 15 ...
+cpue.target<-ddply(cpue.position,.(YEAR,CPUE.TARGET), summarise,COM.AREA=length(CPUE.TARGET))
 
-SurveyCatchStd = Prepare.strata.data(SurveyCatchStd)
-str(SurveyCatchStd)
-#Classes ‘strata.data’ and 'data.frame':	60 obs. of  4 variables:
-#$ SFA      : int  15 15 15 15 15 15 15 15 15 15 ...
-#$ STD.CATCH: num  60 75.4 69.3 98.4 105.3 ...
-#$ Strata   : int  15 15 15 15 15 15 15 15 15 15 ...
-#$ STRATA.ID: int  15 15 15 15 15 15 15 15 15 15 ...
-
-strata.Shrimp = Prepare.strata.file(strata.Shrimp)
-str(strata.Shrimp)
-#List of 2
-#$ Strata: num [1:4] 13 14 15 17
-#$ NH    : num [1:4] 40208 37653 23535 35128
-
-survey.CPUE<-Stratify(SurveyCatchStd,strata.group=strata.Shrimp, species=STD.CATCH)
-
-survey.CPUE
-#    Strata  Sets         Wh                 Mean            Std. Err.        RE(%) Sets.w.Spec
-#[1,] "13"   "15" "0.294508742366013" "153.837463874531" "21.9932588482337" "Not.Est" "14"       
-#[2,] "14"   "15" "0.275797894683034" "217.455210751274" "25.0407313656335" "Not.Est" "15"       
-#[3,] "15"   "15" "0.172389276563638" "117.519140363592" "17.0506820551315" "Not.Est" "15"       
-#[4,] "17"   "15" "0.257304086387315" "240.354123751201" "64.3790642220654" "Not.Est" "15"   
-
-Shrimp.boot<-boot.strata(survey.CPUE,nresamp=1000,method="BWR")
-summary.boot(Shrimp.boot,CI.method = "Percentile",prints=T)
-#Bootstrap mean is survey CPUE used as indicator
-#FOR 2017:
-#Original Mean = 171.3 
-#Original Variance = 529.5 
-#Number of bootstraps =  1000 
-#Bootstrap Mean= 170.7 
-#Variance of Bootstrap Mean= 496.1 
-#Percentile CI's for alpha= 0.05 are  129.0 217.4 
-#Length = 88.43 
-#Shape= 0.1775 
-#Method =  BWR 
-#[[1]]
-#2.5% 97.5%   50% 
-#129.0 217.4 169.3 
-#
-#[[2]]
-#2.5%  97.5%    50% 
-#0.1110 0.3013 0.1994 
-
-#PLOT
-direct <- setwd("C:/Users/cassistadarosm/Documents/SHRIMP/Data/2017 Update/Data Input for Plots/")	
-getwd()
-str.surv.catch<-read.csv("Survey.Stratified.Catch.per.Std.Tow.2017.csv",header=T)
-str.surv.catch
-catch.sfa<-str.surv.catch[,1:5]
-surv.catch.data<-melt(catch.sfa,id.vars = "YEAR")
-mean.catch<-str.surv.catch[,c(1,6:8)]
-
-ggplot(str.surv.catch,aes(x=YEAR, y=STR_MEAN_CT)) +  
-  geom_errorbar(aes(ymin=LOWER_BOUND, ymax=UPPER_BOUND)) + geom_line()+ geom_point() + 
-  scale_x_continuous(name="Year", breaks= seq(1995,2017,3)) +
-  scale_y_continuous(limits=c(0,400), name="Mean Stratified CPUE") 
+cpue.250<-aggregate(CPUE~YEAR,data=cpue.out,)
+cpue.target<-ddply(cpue.out,.(YEAR), summarise,CPUE250=length(CPUE>250))
 
 
-ggplot(mean.catch,aes(YEAR,STR_MEAN_CT) + geom_errorbar(aes(ymin=LOWER_BOUND, ymax=UPPER_BOUND)) + geom_line() + geom_point() + 
-         scale_x_continuous(name="Year", breaks= seq(1995,2017,3)) + facet_wrap(~SFA) +
-         scale_y_continuous(limits=c(20,75), name="Mean Commercial Count") + theme_bw() + 
-         theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()))
+
+
+com.select$ID<-paste(round(com.select$CV_LAT,4),round(com.select$CV_LONG,4),sep = ".")
+rec.with.pos<-subset(com.select,ID!="0.0") #Removes 95 records with no position (1994-91 and 1995-4)
+samp.size.cpue<-with(rec.with.pos,tapply(ID,ID,length))			 
+ss.cpue<-data.frame(ID=names(samp.size.cpue),N=samp.size.cpue)
+POS.CNT<-merge(rec.with.pos,ss.cpue,all=T)			 
+
+
+
+cpue.out<-subset(POS.CNT,YEAR>2013 & YEAR<2018)
+
+cpue450<-subset(POS.CNT,CPUE>450 & YEAR==1994)
+cpue.target<-ddply(cpue450,.(YEAR), summarise,CPUE450=length(unique(ID)))
+
+

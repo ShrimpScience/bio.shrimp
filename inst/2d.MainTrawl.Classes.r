@@ -74,9 +74,32 @@ Surv.TotPop<-read.csv("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Dat
 #Calculate biomass of Primiparous/Transitional, and Multiparous shrimp using total survey population estimates of the main trawl:
 
 #Multiparous:
+head(perc.primtran)
 head(perc.multi)
 head(Surv.TotPop)
+int.dat<-merge(Surv.TotPop,perc.primtran,by=c('YEAR','CL_MM'))
+all.dat<-merge(int.dat,perc.multi,by=c('YEAR','CL_MM'))
+all.dat$BIOM.PT<-all.dat$ess.FREQ*all.dat$FREQ.PT
+all.dat$BIOM.MP<-all.dat$ess.FREQ*all.dat$FREQ.MP
+all.dat$BIOM.Males<-all.dat$ess.FREQ-all.dat$BIOM.PT-all.dat$BIOM.MP
+all.dat$BIOM.Females<-all.dat$BIOM.PT+all.dat$BIOM.MP
+tot.pop.calc<-subset(all.dat, CL_MM>6 & CL_MM<34)
+#Export data to produce table:
+write.csv(tot.pop.calc,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/SurvTotPopCalc.95-18.Data",Sys.Date(),".csv",sep=""), row.names=F)
 
+#Produce a Shannon index of diversity in annual length frequency 1 mm classes:
 
+ann.sum<-ddply(tot.pop.calc,.(YEAR),summarize,TOT.POP=sum(ess.FREQ))
+totpop.index<-select(tot.pop.calc,YEAR,CL_MM,ess.FREQ)
+Shannon.Index<-merge(ann.sum,totpop.index,by="YEAR")
+Shannon.Index$Num.LC<-length(unique(Shannon.Index$CL_MM))
+Shannon.Index$H.PRIME<-(Shannon.Index$ess.FREQ/Shannon.Index$TOT.POP)*(log(Shannon.Index$ess.FREQ/Shannon.Index$TOT.POP))
+sum.H.index<-ddply(Shannon.Index,.(YEAR),summarize,TOT.H=(sum(H.PRIME)*-1),Num.LC=unique(Shannon.Index$Num.LC))
+sum.H.index$RATIO.H<-sum.H.index$TOT.H/log(sum.H.index$Num.LC)
 
-
+#Plot Shannon Index:
+jpeg(filename="ShannonIndex.jpg")
+ggplot(sum.H.index, aes(YEAR,RATIO.H)) + geom_bar(stat="identity") + scale_x_continuous(name="Year",breaks=seq(min(sum.H.index$YEAR), max(sum.H.index$YEAR), 4)) + coord_cartesian(ylim=c(0.70,0.90))+
+  scale_y_continuous(name="Shannon Index (E)") + theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+dev.off() 

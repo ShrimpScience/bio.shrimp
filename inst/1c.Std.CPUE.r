@@ -27,7 +27,9 @@ require(bio.shrimp)
 #Data Query:
 shrimp.db('ComLogs.redo', oracle.username=oracle.username, oracle.password = oracle.password)
 shrimp.db('ComLogs', oracle.username=oracle.username, oracle.password = oracle.password)
-str(shrimp.COMLOG) #50,693 RECORDS
+
+write.csv(shrimp.COMLOG,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/ShrimpComlog.Data",Sys.Date(),".csv",sep=""), row.names=F)
+str(shrimp.COMLOG) #50,690 RECORDS
 head(shrimp.COMLOG)
 
 #TABLE DATA:
@@ -36,7 +38,7 @@ table(shrimp.COMLOG$YEAR)
 #1993 1994 1995 1996 1997 1998 1999 2000 2001 2002 2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 
 #1082 1220 1184 1605 2151 1716 1720 1807 2049 1851 2144 1799 1949 2193 2265 2086 1628 2552 2400 2579 2143 
 #2014 2015 2016 2017 2018 
-#2794 2866 1829 1551 1530 
+#2794 2866 1829 1551 1527 
 
 #Calculate CPUE by record before filtering:
 shrimp.COMLOG$CPUE<-(shrimp.COMLOG$WEIGHT/((trunc(shrimp.COMLOG$FHOURS/100)+((shrimp.COMLOG$FHOURS/100)-trunc(shrimp.COMLOG$FHOURS/100))/0.6)))
@@ -66,9 +68,9 @@ trap.inshore<-subset(shrimp.COMLOG, BLAT>451000 & BLONG>592000 & WEIGHT>0 & FHOU
 trap.inshore$STRATUM<-17
 trap.inshore$TYPE<-'TRAP'
 
-#Combined overall catch table(populates figure 6 in ResDoc):
+#Combined overall catch table(populates the landing values for Table 1 and the catch portion of Table 6 in the Tables_Figures_2018_for_review.docx):
 catch.all<-rbind(off.comlog,ins.comlog,trap.inshore)
-write.xlsx(catch.all, file= "C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/All.Catch.for.GIS.2018.xlsx")
+write.csv(catch.all, file= "C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/All.Catch.for.GIS.Oct.2018.csv")
 catch.table<-ddply(catch.all,.(YEAR,STRATUM,TYPE),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=sum(WEIGHT/1000))
 catchSFA.table<-ddply(catch.all,.(YEAR,STRATUM),summarize,CATCH_KG=sum(WEIGHT),CATCH_MT=sum(WEIGHT/1000))
 catch.strata17<-subset(catch.all,TYPE %in% c("INSHORE","TRAP"))
@@ -76,7 +78,7 @@ catch17.table<-ddply(catch.strata17,.(YEAR),summarize,CATCH_KG=sum(WEIGHT),CATCH
 catch17.table$STRATUM<-17
 catch17.table$TYPE<-'COMBO'
 catch<-rbind(catch.table,catch17.table)
-write.xlsx(catch,file="C:/Users/cassistadarosm/Documents/SHRIMP/Data/Spreadsheets/Catch.Report.2018.xlsx")
+write.csv(catch,file="C:/Users/cassistadarosm/Documents/SHRIMP/Data/2018 Assessment/Catch.Report.Oct.2018.csv")
 
 
 #UNSTANDARDIZED TRAWL CPUE:
@@ -99,34 +101,7 @@ inshore.catch<-ddply(ins.comlog,.(YEAR,SFA),summarize,CATCH_MT=round(sum(WEIGHT/
 inshore.cpue<-ddply(ins.comlog,.(YEAR,STRATUM),summarize,CATCH_MT=sum(WEIGHT/1000),AVG_CPUE=mean(CPUE))
 inshore.cpue
 
-#TRAP SELECTION:
-trap.comlog<-subset(shrimp.COMLOG, BTYPE==4)
-#Trapping occurs in 2 SFAs, SFA 16 and 17
-#table(trap.comlog$SFA)
-#16    17 
-#1027 10256 
-#Trap catches in the past seem to include SFA 17 only
-trap.SFA17<-subset(trap.comlog, SFA==17)
-#Trap catches in the past excluded records with FHOURS==0
-table(trap.SFA17$FHOURS) #3 records with 0 hours (2014-15), but WEIGHT and NTRAPS - I left in
-trap.catch<-ddply(trap.SFA17,.(YEAR,SFA),summarize,CATCH_MT=round(sum(WEIGHT)),EFFORT_TP=sum(NTRAPS,na.rm=T))
-trap.cpue<-ddply(trap.catch,.(YEAR,SFA),summarize,AVG_CPUE=CATCH_MT/EFFORT_TP)
-trap.cpue
 
-jpeg(filename="trap_cpue.jpg")
-ry<-quantile(trap.cpue$AVG_CPUE[trap.cpue$YEAR>1999&trap.cpue$YEAR<2011], probs=.33, na.rm=TRUE)
-yg<-quantile(trap.cpue$AVG_CPUE[trap.cpue$YEAR>1999&trap.cpue$YEAR<2011], probs=.66, na.rm=TRUE)
-xmin=-Inf
-xmax=Inf
-ggplot(trap.cpue, aes(YEAR,AVG_CPUE)) +
-  geom_rect(aes(xmin = xmin, xmax = xmax,ymin = -Inf, ymax = ry), fill = "red", alpha = 0.015) +
-  geom_rect(aes(xmin = xmin, xmax = xmax,ymin =ry , ymax = yg), fill = "yellow", alpha = 0.015) + 
-  geom_rect(aes(xmin = xmin, xmax = xmax,ymin = yg, ymax = Inf), fill = "green", alpha = 0.015) +
-  geom_hline(yintercept = yg,colour="dark green") + geom_hline(yintercept = ry,colour="red") + 
-  geom_point() + geom_line() + scale_x_continuous(name="Year",breaks=seq(min(trap.cpue$YEAR), max(trap.cpue$YEAR), 2)) +
-  scale_y_continuous(name="Trap cpue (kg/trap haul)") + theme_bw() +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
-dev.off()    
 
 ################################ Commercial Catch ##########################################
 str(shrimp.COMLOG) #48,751 RECORDS
@@ -210,17 +185,17 @@ dev.off()
 #STANDARDIZED TRAWL CPUE - GLM fishing April to July inclusively and only boats that have fished 7 years or more,
 #do not process onboard, and NS fleet only.  
 #Standarized to highliner, highest catch month and SFA
-head(shrimp.COMLOG) #48,751 RECORDS
+head(shrimp.COMLOG) #50,690 RECORDS
 #Select for weights and hours not equal to zero and boat types from NS fleet only (1 & 2)
 comlog.clean<-subset(shrimp.COMLOG, WEIGHT>0 & FHOURS>0 & BTYPE<3, na.rm=T)
-str(comlog.clean) #27,847 RECORDS
+str(comlog.clean) #28,850 RECORDS
 
 comlog.dat<-comlog.clean[,c("BCODE", "FDATE", "YEAR", "MONTH", "SFA", "FHOURS", "WEIGHT", "CPUE")]
 head(comlog.dat)
 
 #First, select April-July inclusive (months 4 to 7)
 month.filter<-comlog.dat[comlog.dat$MONTH>3 & comlog.dat$MONTH<8,]
-dim(month.filter)#19,572 RECORDS
+dim(month.filter)#20,435 RECORDS
 
 #Plot annual boxplot of filtered data for selected months
 ggplot(month.filter,aes(YEAR,CPUE, group=YEAR)) + geom_boxplot() + theme_bw() +
@@ -257,7 +232,7 @@ scale_y_continuous(name="Unstandardized CPUE (kg/hr)", breaks=seq(0,2500,500)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
 
 #Plot monthly boxplot of filtered data for latest year
-ggplot(subset(month.filter, YEAR==2016),aes(MONTH,CPUE, group=MONTH)) + geom_boxplot() + theme_bw() +
+ggplot(subset(month.filter, YEAR==2018),aes(MONTH,CPUE, group=MONTH)) + geom_boxplot() + theme_bw() +
   scale_x_continuous(name="MONTH", breaks=seq(4,7,1)) +
   scale_y_continuous(name="Unstandardized CPUE (kg/hr)", breaks=seq(0,2000,500)) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
