@@ -39,12 +39,18 @@ table(shrimp.survey$YEAR)
 #2003 2004 2005 2006 2007 2008 2009 2010 2011 2012 2013 2014 2015 2016 2017 2018 
 #  69   61   58   60   60   60   60   60   60   60   60   60   60   60   60   60 
 
+#Select set code 1 and 2 for successful random and fixed survey tows:
+shrimp.surv<-subset(shrimp.survey,SETCODE<3) #1,883 RECORDS
+
 #Acquire Data from TOTALS View data query:
 shrimp.db('TOTALS.redo', oracle.username=oracle.username, oracle.password = oracle.password)
 shrimp.db('TOTALS', oracle.username=oracle.username, oracle.password = oracle.password)
 str(TOTALS.VIEW) #3,284 RECORDS
 write.csv(TOTALS.VIEW,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/ShrimpTOTALS.Data",Sys.Date(),".csv",sep=""), row.names=F)
 head(TOTALS.VIEW)
+
+# Select records where the total weight is greater than 0:
+totals.sel<-subset(TOTALS.VIEW,TOTWT>0) #3,102 RECORDS
 
 #Acquire Data from TOTALSFEMTRAN View data query:
 shrimp.db('TOTALSFEMTRAN.redo', oracle.username=oracle.username, oracle.password = oracle.password)
@@ -53,6 +59,18 @@ str(TOTALSFEMTRAN.VIEW) #2,861 RECORDS
 write.csv(TOTALSFEMTRAN.VIEW,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/ShrimpTOTALSFEMTRAN.Data",Sys.Date(),".csv",sep=""), row.names=F)
 head(TOTALSFEMTRAN.VIEW)
 
+# Select records where the total weight is greater than 0:
+totalsfemtran.sel<-subset(TOTALSFEMTRAN.VIEW,TOTWT>0) #2,861 RECORDS
+
+#Create a new dataframe containing columns required for calculation:
+survey.dat<-select(shrimp.surv,'BCODE'=CRUISE,YEAR,FDATE,STRATUM,XSET,DIST,WEIGHT) 
+totals.dat<-select(totals.sel,BCODE,YEAR,FDATE,STRATUM,XSET,TOTWT)
+totalsfemtran.dat<-select(totalsfemtran.sel,BCODE,YEAR,FDATE,STRATUM,XSET,"TOTWTF"=TOTWT)
+
+shrimp.dens<-merge(totals.dat,totalsfemtran.dat,by=c('BCODE',"YEAR",'FDATE','STRATUM','XSET'))
+surv.dens<-merge(survey.dat,shrimp.dens,by=c('BCODE','YEAR','FDATE','STRATUM','XSET'))
+
+ddply(surv.dens,.(YEAR))
 ssb.qry<-paste("select shrsurvey.cruise,totals.sfa,avg(weight*1000/(dist*1852*17.705)*(totalsfemtran.totwt/totals.totwt))
                from shrsurvey, totals, totalsfemtran 
                where shrsurvey.cruise=totals.bcode
