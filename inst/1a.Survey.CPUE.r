@@ -164,7 +164,7 @@ ggplot(survey.dat,aes(YEAR,FINAL_CATCH)) + geom_bar(stat='identity', position="s
 
 ################################# CPUE Using Stratify #####################################
 #Run data through the stratify function one year at a time:
-strata.Shrimp<-rename(strata.area.data,c("Stratum"="Strata","km2"="Area","Num_Units"="NH"))
+strata.Shrimp<-rename.vars(strata.area.data,c('Stratum','km2', 'Num_Units'),c( "Strata", "Area", "NH"))
 
 
 outputs2 <- as.data.frame(do.call(rbind,out))
@@ -201,19 +201,21 @@ outputs2 <- as.data.frame(do.call(rbind,out))
 
 
 
-
+head(shrimp.surv)
 #Isolate last survey year:
-survey.2017<-subset(shrimp.surv2,YEAR==2017)
+survey.2017<-subset(shrimp.surv,YEAR==2017)
+survey.2018<-subset(shrimp.surv,YEAR==2018)
 
 #survey.lyear<-cbind.data.frame(SFA=survey.2016$SFA,STD.CATCH=survey.2016$STD_CATCH)
 #head(survey.lyear)
 
-survey.lyear = survey.2017[,c("SFA","STD_CATCH")]
+survey.lyear = survey.2017[,c("STRATUM","FINAL_CATCH")]
+survey.lyear2 = survey.2018[,c("STRATUM","FINAL_CATCH")]
 
 
 #survey.2017<-subset(shrimp.surv2,YEAR==2017)
-survey.last.year<-ddply(survey.2017,.(YEAR,SFA),summarize,TOT_WEIGHT=sum(WEIGHT), TOT_CATCH=sum(STD_CATCH),
-                        MEAN_CATCH=mean(STD_CATCH))
+survey.last.year2<-ddply(survey.2018,.(YEAR,STRATUM),summarize,TOT_WEIGHT=sum(WEIGHT), TOT_CATCH=sum(FINAL_CATCH),
+                        MEAN_CATCH=mean(FINAL_CATCH))
 head(survey.last.year)
 #Bootstrap stratified standardized catch rate
 #Use Stratify function from S.Smith 
@@ -223,8 +225,8 @@ head(survey.last.year)
 ##strata.Shrimp<-data.frame(Strata=c(13,14,15,17),Area=c(1620,1517,948,1415),NH=c(40207.55862,37653.07586,23535.30115,35128.22422))
 
 #SurveyCatchStd<-survey.lyear[,c("SFA","STD.CATCH")]
-SurveyCatchStd<-survey.lyear
-SurveyCatchStd$STRATA.ID=SurveyCatchStd$Strata=SurveyCatchStd$SFA
+SurveyCatchStd<-survey.lyear2
+SurveyCatchStd$STRATA.ID=SurveyCatchStd$Strata=SurveyCatchStd$STRATUM
 str(SurveyCatchStd)
 #'data.frame':	60 obs. of  4 variables:
 #$ SFA      : int  15 15 15 15 15 15 15 15 15 15 ...
@@ -246,7 +248,7 @@ str(strata.Shrimp)
 #$ Strata: num [1:4] 13 14 15 17
 #$ NH    : num [1:4] 40208 37653 23535 35128
 
-survey.CPUE<-Stratify(SurveyCatchStd,strata.group=strata.Shrimp, species=STD.CATCH)
+survey.CPUE<-Stratify(SurveyCatchStd,strata.group=strata.Shrimp, species=FINAL.CATCH)
 
 survey.CPUE
 #    Strata  Sets         Wh                 Mean            Std. Err.        RE(%) Sets.w.Spec
@@ -256,7 +258,7 @@ survey.CPUE
 #[4,] "17"   "15" "0.257304086387315" "240.354123751201" "64.3790642220654" "Not.Est" "15"   
 
 Shrimp.boot<-boot.strata(survey.CPUE,nresamp=1000,method="BWR")
-summary.boot(Shrimp.boot,CI.method = "Percentile",prints=T)
+summary(Shrimp.boot,CI.method = "Percentile",prints=T)
 #Bootstrap mean is survey CPUE used as indicator
 #FOR 2017:
 #Original Mean = 171.3 

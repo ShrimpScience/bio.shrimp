@@ -8,29 +8,72 @@
 #' @importFrom plyr ddply
 #' @importFrom RODBC odbcConnect
 #' @importFrom RODBC sqlQuery
-#' @importFrom bio.survey Prepare.strata.data
-#' @importFrom bio.survey Prepare.strata.file
-#' @importFrom bio.survey Stratify
-#' @importFrom bio.survey boot.strata
-#' @importFrom bio.lobster convert.dd.dddd
 #' @importFrom ggplot2 ggplot
 #' @importFrom reshape melt
-#' @importFrom car Anova
 #' @importFrom effects allEffects
 #' @importFrom gridExtra grid.arrange
 #' @importFrom gdata rename.vars
 
 #' 
 #' @author Manon Cassista-Da Ros, \email{manon.cassista-daros@@dfo-mpo.gc.ca}
-#' @seealso \code{\link{template.function}}, \url{http://www.github.com/Beothuk/bio.template}
 #' @export
 
 ### MCassistaDaRos running and modifying code provided by DHardie/JBroome in ESS_Shrimp_2016.r
-### Start: December 20, 2017 
+### Start: November 1, 2018 
 require(bio.shrimp)
 
-################### Commercial Catches
-################### Survey CPUE and Biomass ############################## 
+############################### Survey Maximum Shrimp Size ################################ 
+#script max_length.sql
+#csv file max_length.csv
+#setwd()
+
+#Main Trawl Survey data query:
+shrimp.db('Details.redo', oracle.username=oracle.username, oracle.password = oracle.password)
+shrimp.db('Details', oracle.username=oracle.username, oracle.password = oracle.password)
+str(shrimp.DETAILS) #1,235,063 RECORDS
+write.csv(shrimp.DETAILS,paste("C:/Users/cassistadarosm/Documents/SHRIMP/Data/Offline Data Files/ShrimpDetails.Data",Sys.Date(),".csv",sep=""), row.names=F)
+head(shrimp.DETAILS)
+
+# Select survey data only:
+CL.survey<-subset(shrimp.DETAILS, GEAR==4)
+
+max.surv.CL<-ddply(CL.survey,.(YEAR,BCODE,SFA,XSET),summarize, MAX_CL=max(CARLEN)/10)
+
+par(mfrow=c(1,1))
+
+#### to fit - must namually rename the header to BCODE	FDATE	YEAR	SFA	XSET	MAX_L and manually remove the single 1946 value
+maxl.qry<-paste("select bcode,fdate,to_char(fdate,'YYYY'),sfa,xset,max(carlen/10) 
+                from shrdetail
+                where gear=4  group
+                by bcode,fdate,sfa,xset")
+maxl.dat<-sqlQuery(ch,maxl.qry)
+head(maxl.dat)
+
+colnames(maxl.dat)<-c("BCODE", "FDATE", "YEAR", "SFA", "XSET", "MAX_L")
+head(maxl.dat) #works	
+maxl.dat<-subset(maxl.dat, !YEAR==1946)
+head(maxl.dat)
+maxl<-maxl.dat
+
+mean_maxl<-aggregate(maxl,by=list(year=maxl$YEAR),mean)
+error_maxl<-aggregate(maxl,by=list(year=maxl$YEAR),std.error)
+
+year<-mean_maxl$YEAR
+mean<-mean_maxl$MAX_L
+se<-error_maxl$MAX_L
+se<-2*se
+ub<-mean+2*se
+lb<-mean-2*se
+mean_maxl<-cbind(year,mean,se,ub,lb)
+
+mxl<-as.data.frame(mean_maxl)
+
+write.table(mean_maxl, file="max_length.txt")
+
+plotCI(mxl$year,mxl$mean,2*mxl$se, xlab="year", ylab="mean max length (mm)", xlim=c(1995,2016), ylim=c(28,31))
+lines(mxl$year,mxl$mean)
+legend("topleft", "B", bty="n") 
+
 #Survey data query:
 shrimp.db('survey.redo', oracle.username=oracle.username, oracle.password = oracle.password)
 shrimp.db('survey', oracle.username=oracle.username, oracle.password = oracle.password)
