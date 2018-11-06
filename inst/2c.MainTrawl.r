@@ -54,7 +54,7 @@ options(scipen = 999)
 # Reproduction of ORACLE view to calculate totals to be applied for caclculations 
 main.data<-select(shrimp.DETAILS,BCODE,FDATE,GEAR,SFA,STRATUM,XSET,WTIND,CARLEN,TOTNUM)
 totals.dat<-ddply(main.data,.(BCODE,FDATE,GEAR,SFA,STRATUM,XSET),summarize,
-                  TOTWT=sum(WTIND/100),AVEWT=mean(WTIND),TOTCT=length(TOTNUM),CTLB=TOTCT                     /((sum((WTIND/100000)*2.204))+0.0000001))
+                  TOTWT=sum(WTIND/100),AVEWT=mean(WTIND),TOTCT=length(TOTNUM),CTLB=TOTCT/((sum((WTIND/100000)*2.204))+0.0000001))
 
 # To calculate number estimates based on carapace length, a merge between the survey and main trawl data must be done:
 survey.data<-select(shrimp.surv,'BCODE'=CRUISE, XSET, SFA, STRATUM, WEIGHT,DIST,'SDATE'=FDATE)

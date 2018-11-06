@@ -55,7 +55,7 @@ table(shrimp.survey$YEAR)
   
 #Standardize catch to trawlable unit all data:
 # 1- Select successful tows only and year range for reporting (data range available: 1982 to 2017):
-shrimp.surv<-subset(shrimp.survey, SETCODE<3 & YEAR>1994)
+shrimp.surv<-subset(shrimp.survey, SETCODE<3) & YEAR>1994)
 
 # 2- For YEARS where WING was not extracted from net mensuration, the expected measurement was used.
 shrimp.surv[shrimp.surv$YEAR==2008,]$WING<-17.4
@@ -65,10 +65,13 @@ y=unique(shrimp.surv$YEAR)
 for(i in 1:length(y)){
   mW = mean(shrimp.surv$WING[shrimp.surv$YEAR==y[i] & shrimp.surv$WING!=0], na.rm = T)
   mH = mean(shrimp.surv$H_HEIGHT[shrimp.surv$YEAR==y[i] & shrimp.surv$H_HEIGHT!=0], na.rm = T)
+  D = 1.25
   shrimp.surv$WING[shrimp.surv$YEAR==y[i]&is.na(shrimp.surv$WING)]=mW
   shrimp.surv$H_HEIGHT[shrimp.surv$YEAR==y[i]&is.na(shrimp.surv$H_HEIGHT)]=mH
-  shrimp.surv$WING[shrimp.surv$YEAR==y[i]&shrimp.surv$WING==0]=mW
-  shrimp.surv$H_HEIGHT[shrimp.surv$YEAR==y[i]&shrimp.surv$H_HEIGHT==0]=mH
+  shrimp.surv$DIST[shrimp.surv$YEAR==y[i]&is.na(shrimp.surv$DIST)]=D
+  
+  #shrimp.surv$WING[shrimp.surv$YEAR==y[i]&shrimp.surv$WING==0]=mW
+  #shrimp.surv$H_HEIGHT[shrimp.surv$YEAR==y[i]&shrimp.surv$H_HEIGHT==0]=mH
 }
 
 #In 1995 and 1996 different trawl nets were used.  From 1997 onward the gear type has been constant.

@@ -13,7 +13,8 @@ Depends:
   reshape,
   gridExtra,
   gdata,
-  dplyr
+  dplyr,
+  plotrix
 Imports:
   devtools,
     bio.utilities
@@ -26,4 +27,4 @@ VignetteBuilder: knitr
 License: MIT + file LICENSE
 LazyData: true
   RoxygenNote: 5.0.1
-RoxygenNote: 6.0.1
+RoxygenNote: 6.1.0

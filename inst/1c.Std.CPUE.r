@@ -14,6 +14,7 @@
 #' @importFrom gridExtra grid.arrange
 #' @importFrom gdata rename.vars
 #' @importFrom xlsx write.xlsx
+#' @importFrom plotrix std.error
 
 #' 
 #' @author Manon Cassista-Da Ros, \email{manon.cassista-daros@@dfo-mpo.gc.ca}
