@@ -9,9 +9,8 @@
 *.pdf
 *.ini
 *.tiff
-ShadowDir.list
-R\ShadowDir.list
 .Rproj.user
-InProgress/
-inst/Requests/
+inst/Inputs/
+inst/Figures/
+inst/InProgress/
 datadirectory/
