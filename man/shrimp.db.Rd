@@ -4,13 +4,15 @@
 \alias{shrimp.db}
 \title{shrimp.db}
 \usage{
-shrimp.db(DS = "complete.redo", oracle.server = "PTRAN",
-  oracle.username = NULL, oracle.password = NULL,
-  datadirectory = file.path(getwd(), "data"))
+shrimp.db(DS = "complete.redo", oracle.server = oracle.server,
+  oracle.username = oracle.username, oracle.password = oracle.password,
+  datadirectory = datadirectory, showprogress = F)
 }
 \arguments{
-\item{DS}{is the main switch that selects which data source to load or operate. 
-Options for DS include: 'complete','survey','ComLogs'. Any of these arguements called as listed return the data object. To make the data file from scratch would require a 'XXXX.redo', where XXXX is the option listed above.}
+\item{DS}{default is \code{'complete.redo'} This is the main switch that selects which data source to load or operate.
+Options for DS include: 'complete','survey','comlogs','details','observer','millim','totals','totalsfemtran' and 'juveniles'.
+Any of these arguments called as listed return the data object - 'complete' loads ALL data sources.
+To make the data file from scratch would require a 'XXXX.redo', where XXXX is the option listed above.}
 
 \item{oracle.server}{This is the server}
 
@@ -18,7 +20,9 @@ Options for DS include: 'complete','survey','ComLogs'. Any of these arguements c
 
 \item{oracle.password}{This is the password}
 
-\item{datadirectory}{This is where your data will be saved}
+\item{datadirectory}{This is where you want to store your data (or where your data is already stored)}
+
+\item{showprogress}{default is FALSE}
 }
 \value{
 Data objects that contain the data for use in further analyses.
