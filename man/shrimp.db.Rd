@@ -4,8 +4,9 @@
 \alias{shrimp.db}
 \title{shrimp.db}
 \usage{
-shrimp.db(DS = "complete.redo", oracle.server = oracle.server,
-  oracle.username = oracle.username, oracle.password = oracle.password,
+shrimp.db(DS = "complete.redo", this.oracle.server = oracle.server,
+  this.oracle.username = oracle.username,
+  this.oracle.password = oracle.password,
   datadirectory = datadirectory, showprogress = F)
 }
 \arguments{
@@ -14,11 +15,11 @@ Options for DS include: 'complete','survey','comlogs','details','observer','mill
 Any of these arguments called as listed return the data object - 'complete' loads ALL data sources.
 To make the data file from scratch would require a 'XXXX.redo', where XXXX is the option listed above.}
 
-\item{oracle.server}{This is the server}
+\item{this.oracle.server}{This is the server}
 
-\item{oracle.username}{This is the username}
+\item{this.oracle.username}{This is the username}
 
-\item{oracle.password}{This is the password}
+\item{this.oracle.password}{This is the password}
 
 \item{datadirectory}{This is where you want to store your data (or where your data is already stored)}
 

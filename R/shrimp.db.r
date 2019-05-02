@@ -4,15 +4,14 @@
 #' Options for DS include: 'complete','survey','comlogs','details','observer','millim','totals','totalsfemtran' and 'juveniles'.
 #' Any of these arguments called as listed return the data object - 'complete' loads ALL data sources.
 #' To make the data file from scratch would require a 'XXXX.redo', where XXXX is the option listed above.
-#' @param oracle.server This is the server
-#' @param oracle.username This is the username
-#' @param oracle.password This is the password
+#' @param this.oracle.server This is the server
+#' @param this.oracle.username This is the username
+#' @param this.oracle.password This is the password
 #' @param datadirectory This is where you want to store your data (or where your data is already stored)
 #' @param showprogress default is FALSE
 #' @importFrom lubridate year
-#' @importFrom RODBC sqlQuery
-#' @importFrom RODBC odbcConnect
-#' @importFrom RODBC odbcClose
+#' @importFrom ROracle dbGetQuery
+#' @importFrom ROracle dbConnect
 #' @importFrom utils write.csv
 #' @importFrom lubridate month
 #' @return Data objects that contain the data for use in further analyses.
@@ -21,9 +20,9 @@
 #' @export
 #'
 shrimp.db = function( DS="complete.redo",
-                      oracle.server=oracle.server,
-                      oracle.username=oracle.username,
-                      oracle.password=oracle.password,
+                      this.oracle.server=oracle.server,
+                      this.oracle.username=oracle.username,
+                      this.oracle.password=oracle.password,
                       datadirectory = datadirectory,
                       showprogress = F) {
 
@@ -108,7 +107,8 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("Survey.Data.",ts)),".csv")
 
-      shrimp.survey<-RODBC::sqlQuery(con,"select * from SHRIMP.SHRSURVEY")
+      #shrimp.survey<-RODBC::sqlQuery(con,"select * from SHRIMP.SHRSURVEY")
+      shrimp.survey<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRSURVEY")
       shrimp.survey$CV_LAT<-convert.dd.dddd(shrimp.survey$BLAT/100)
       shrimp.survey$CV_LONG<-convert.dd.dddd(shrimp.survey$BLONG/100)*-1
       shrimp.survey$YEAR<-lubridate::year(shrimp.survey$FDATE)
@@ -125,7 +125,7 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("Comlog.Data.",ts)),".csv")
 
-      shrimp.COMLOG<-RODBC::sqlQuery(con,"select * from SHRIMP.SHRCOMLOG")
+      shrimp.COMLOG<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRCOMLOG")
       shrimp.COMLOG$CV_LAT<-convert.dd.dddd(shrimp.COMLOG$BLAT/100)
       shrimp.COMLOG$CV_LONG<-convert.dd.dddd(shrimp.COMLOG$BLONG/100)*-1
       shrimp.COMLOG$YEAR<-lubridate::year(shrimp.COMLOG$FDATE)
@@ -143,7 +143,7 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("Details.Data.",ts)),".csv")
 
-      shrimp.DETAILS<-RODBC::sqlQuery(con,"select * from SHRIMP.SHRDETAIL")
+      shrimp.DETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRDETAIL")
       shrimp.DETAILS$CV_LAT<-convert.dd.dddd(shrimp.DETAILS$LAT/100)
       shrimp.DETAILS$CV_LONG<-convert.dd.dddd(shrimp.DETAILS$XLONG/100)*-1
       shrimp.DETAILS$YEAR<-lubridate::year(shrimp.DETAILS$FDATE)
@@ -161,7 +161,7 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("Observer.Data.",ts)),".csv")
 
-      shrimp.observer<-RODBC::sqlQuery(con,"select to_number(to_char(setdate,'YYYY')) year, to_char(s.fishset_id) fishset_id, trip,v.vessel_name, s.set_no, (to_char(setdate,'DD-MM-YYYY')) setdate, settime,longitude lon, latitude lat, sc.speccd_id, common species, est_num_caught, est_kept_wt,est_discard_wt, est_reduction_wt,est_combined_wt, s.source, p.pntcd_id gear_cd
+      shrimp.observer<-ROracle::dbGetQuery(con,"select to_number(to_char(setdate,'YYYY')) year, to_char(s.fishset_id) fishset_id, trip,v.vessel_name, s.set_no, (to_char(setdate,'DD-MM-YYYY')) setdate, settime,longitude lon, latitude lat, sc.speccd_id, common species, est_num_caught, est_kept_wt,est_discard_wt, est_reduction_wt,est_combined_wt, s.source, p.pntcd_id gear_cd
                                   from  observer.istrips t,
                                   observer.isfishsets s,
                                   observer.issetprofile p,
@@ -194,7 +194,7 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("MILLIM.VIEW.",ts)),".csv")
 
-      MILLIM.VIEW<-RODBC::sqlQuery(con,"select * from SHRIMP.MILLIM")
+      MILLIM.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.MILLIM")
       MILLIM.VIEW$YEAR<-lubridate::year(MILLIM.VIEW$FDATE)
       MILLIM.VIEW$MONTH<-lubridate::month(MILLIM.VIEW$FDATE)
       save(MILLIM.VIEW, file=r_nm, compress=T)
@@ -210,7 +210,7 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("TOTALS.VIEW.",ts)),".csv")
 
-      TOTALS.VIEW<-RODBC::sqlQuery(con,"select * from SHRIMP.TOTALS")
+      TOTALS.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.TOTALS")
       TOTALS.VIEW$YEAR<-lubridate::year(TOTALS.VIEW$FDATE)
       TOTALS.VIEW$MONTH<-lubridate::month(TOTALS.VIEW$FDATE)
       save(TOTALS.VIEW, file=r_nm, compress=T)
@@ -226,7 +226,7 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("TOTALSFEMTRAN.VIEW.",ts)),".csv")
 
-      TOTALSFEMTRAN.VIEW<-RODBC::sqlQuery(con,"select * from SHRIMP.TOTALSFEMTRAN")
+      TOTALSFEMTRAN.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.TOTALSFEMTRAN")
       TOTALSFEMTRAN.VIEW$YEAR<-lubridate::year(TOTALSFEMTRAN.VIEW$FDATE)
       TOTALSFEMTRAN.VIEW$MONTH<-lubridate::month(TOTALSFEMTRAN.VIEW$FDATE)
       save(TOTALSFEMTRAN.VIEW, file=r_nm, compress=T)
@@ -241,7 +241,7 @@ shrimp.db = function( DS="complete.redo",
     r_nm = file.path(rdataPath, "shrimp.Juvenile.rdata")
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("shrimp.Juv.data.",ts)),".csv")
-      shrimp.Juv<-RODBC::sqlQuery(con,"select * from SHRIMP.SHRJUV")
+      shrimp.Juv<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRJUV")
 
       # shrimp.Juv$YEAR<-lubridate::year(shrimp.Juv$FDATE)
       # shrimp.Juv$MONTH<-lubridate::month(shrimp.Juv$FDATE)
@@ -254,7 +254,8 @@ shrimp.db = function( DS="complete.redo",
     if (this_showprogress)cat(paste("Loaded:",r_nm,"\n"))
   }
   # make the oracle connection
-  thiscon = RODBC::odbcConnect(oracle.server, uid=oracle.username,pwd=oracle.password, believeNRows=F)
+  thiscon <- ROracle::dbConnect(DBI::dbDriver("Oracle"), this.oracle.username, this.oracle.password, this.oracle.server)
+  # thiscon = RODBC::odbcConnect(oracle.server, uid=oracle.username,pwd=oracle.password, believeNRows=F)
   if (is.null(thiscon)){
     cat("No valid connection, aborting\n")
     return()
@@ -308,5 +309,5 @@ shrimp.db = function( DS="complete.redo",
     }
   }
   gc()
-  RODBC::odbcClose(thiscon)
+  #RODBC::odbcClose(thiscon)
 }
