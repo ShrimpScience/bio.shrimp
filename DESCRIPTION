@@ -5,8 +5,9 @@ Authors@R: c( person("Manon", "Cassista-Da Ros", email="manon.cassista-daros@dfo
 Description: This project interacts with the functionality of other 'bio'- based projects to supplement the work produced in this package.
 Depends:
   R (>= 3.0.0),
-  ROracle,
   lubridate
+Enhances:
+  ROracle
 License: MIT + file LICENSE
 LazyData: true
   RoxygenNote: 5.0.1

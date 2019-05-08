@@ -10,8 +10,6 @@
 #' @param datadirectory This is where you want to store your data (or where your data is already stored)
 #' @param showprogress default is FALSE
 #' @importFrom lubridate year
-#' @importFrom ROracle dbGetQuery
-#' @importFrom ROracle dbConnect
 #' @importFrom utils write.csv
 #' @importFrom lubridate month
 #' @return Data objects that contain the data for use in further analyses.
@@ -254,7 +252,6 @@ shrimp.db = function( DS="complete.redo",
   }
   # make the oracle connection
   thiscon <- ROracle::dbConnect(DBI::dbDriver("Oracle"), this.oracle.username, this.oracle.password, this.oracle.server)
-  # thiscon = RODBC::odbcConnect(oracle.server, uid=oracle.username,pwd=oracle.password, believeNRows=F)
   if (is.null(thiscon)){
     cat("No valid connection, aborting\n")
     return()
@@ -308,6 +305,5 @@ shrimp.db = function( DS="complete.redo",
     }
   }
   gc()
-  ROracle::dbDisconnect(thiscon)
   #RODBC::odbcClose(thiscon)
 }
