@@ -17,6 +17,7 @@
 # shrimp.db('survey') #loads the object survey
 #' @export
 #'
+utils::globalVariables(c("oracle.server", "oracle.username", "oracle.password"))
 shrimp.db = function( DS="complete.redo",
                       this.oracle.server=oracle.server,
                       this.oracle.username=oracle.username,
@@ -109,6 +110,9 @@ shrimp.db = function( DS="complete.redo",
       shrimp.survey$CV_LAT<-convert.dd.dddd(shrimp.survey$BLAT/100)
       shrimp.survey$CV_LONG<-convert.dd.dddd(shrimp.survey$BLONG/100)*-1
       shrimp.survey$YEAR<-lubridate::year(shrimp.survey$FDATE)
+      shrimp.survey$DATE <- paste0(lubridate::year(shrimp.survey$FDATE),"-",
+                                     sprintf("%02d",lubridate::month(shrimp.survey$FDATE)),"-",
+                                     sprintf("%02d",lubridate::day(shrimp.survey$FDATE)))
       save(shrimp.survey, file=r_nm, compress=T)
       utils::write.csv(shrimp.survey, c_nm,row.names = F)
       if (this_showprogress)cat(paste("Saved:\n\t",r_nm,"\n\t",c_nm,"\n"))
@@ -127,6 +131,9 @@ shrimp.db = function( DS="complete.redo",
       shrimp.COMLOG$CV_LONG<-convert.dd.dddd(shrimp.COMLOG$BLONG/100)*-1
       shrimp.COMLOG$YEAR<-lubridate::year(shrimp.COMLOG$FDATE)
       shrimp.COMLOG$MONTH<-lubridate::month(shrimp.COMLOG$FDATE)
+      shrimp.survey$DATE <- paste0(lubridate::year(shrimp.survey$FDATE),"-",
+                                   sprintf("%02d",lubridate::month(shrimp.survey$FDATE)),"-",
+                                   sprintf("%02d",lubridate::day(shrimp.survey$FDATE)))
       save(shrimp.COMLOG, file=r_nm, compress=T)
       utils::write.csv(shrimp.COMLOG, c_nm,row.names = F)
       if (this_showprogress)cat(paste("Saved:\n\t",r_nm,"\n\t",c_nm,"\n"))
@@ -145,6 +152,9 @@ shrimp.db = function( DS="complete.redo",
       shrimp.DETAILS$CV_LONG<-convert.dd.dddd(shrimp.DETAILS$XLONG/100)*-1
       shrimp.DETAILS$YEAR<-lubridate::year(shrimp.DETAILS$FDATE)
       shrimp.DETAILS$MONTH<-lubridate::month(shrimp.DETAILS$FDATE)
+      shrimp.survey$DATE <- paste0(lubridate::year(shrimp.survey$FDATE),"-",
+                                   sprintf("%02d",lubridate::month(shrimp.survey$FDATE)),"-",
+                                   sprintf("%02d",lubridate::day(shrimp.survey$FDATE)))
       save(shrimp.DETAILS, file=r_nm, compress=T)
       utils::write.csv(shrimp.DETAILS, c_nm,row.names = F)
       if (this_showprogress)cat(paste("Saved:\n\t",r_nm,"\n\t",c_nm,"\n"))
@@ -194,6 +204,9 @@ shrimp.db = function( DS="complete.redo",
       MILLIM.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.MILLIM")
       MILLIM.VIEW$YEAR<-lubridate::year(MILLIM.VIEW$FDATE)
       MILLIM.VIEW$MONTH<-lubridate::month(MILLIM.VIEW$FDATE)
+      shrimp.survey$DATE <- paste0(lubridate::year(shrimp.survey$FDATE),"-",
+                                   sprintf("%02d",lubridate::month(shrimp.survey$FDATE)),"-",
+                                   sprintf("%02d",lubridate::day(shrimp.survey$FDATE)))
       save(MILLIM.VIEW, file=r_nm, compress=T)
       utils::write.csv(MILLIM.VIEW, c_nm,row.names = F)
       if (this_showprogress)cat(paste("Saved:\n\t",r_nm,"\n\t",c_nm,"\n"))
@@ -210,6 +223,9 @@ shrimp.db = function( DS="complete.redo",
       TOTALS.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.TOTALS")
       TOTALS.VIEW$YEAR<-lubridate::year(TOTALS.VIEW$FDATE)
       TOTALS.VIEW$MONTH<-lubridate::month(TOTALS.VIEW$FDATE)
+      shrimp.survey$DATE <- paste0(lubridate::year(shrimp.survey$FDATE),"-",
+                                   sprintf("%02d",lubridate::month(shrimp.survey$FDATE)),"-",
+                                   sprintf("%02d",lubridate::day(shrimp.survey$FDATE)))
       save(TOTALS.VIEW, file=r_nm, compress=T)
       utils::write.csv(TOTALS.VIEW, c_nm,row.names = F)
       if (this_showprogress)cat(paste("Saved:\n\t",r_nm,"\n\t",c_nm,"\n"))
@@ -226,6 +242,9 @@ shrimp.db = function( DS="complete.redo",
       TOTALSFEMTRAN.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.TOTALSFEMTRAN")
       TOTALSFEMTRAN.VIEW$YEAR<-lubridate::year(TOTALSFEMTRAN.VIEW$FDATE)
       TOTALSFEMTRAN.VIEW$MONTH<-lubridate::month(TOTALSFEMTRAN.VIEW$FDATE)
+      shrimp.survey$DATE <- paste0(lubridate::year(shrimp.survey$FDATE),"-",
+                                   sprintf("%02d",lubridate::month(shrimp.survey$FDATE)),"-",
+                                   sprintf("%02d",lubridate::day(shrimp.survey$FDATE)))
       save(TOTALSFEMTRAN.VIEW, file=r_nm, compress=T)
       utils::write.csv(TOTALSFEMTRAN.VIEW, c_nm,row.names = F)
       if (this_showprogress)cat(paste("Saved:\n\t",r_nm,"\n\t",c_nm,"\n"))
