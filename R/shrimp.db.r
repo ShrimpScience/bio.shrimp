@@ -17,6 +17,7 @@
 # shrimp.db('survey') #loads the object survey
 #' @export
 #'
+
 utils::globalVariables(c("oracle.server", "oracle.username", "oracle.password"))
 shrimp.db = function( DS="complete.redo",
                       this.oracle.server=oracle.server,
@@ -131,9 +132,9 @@ shrimp.db = function( DS="complete.redo",
       shrimp.COMLOG$CV_LONG<-convert.dd.dddd(shrimp.COMLOG$BLONG/100)*-1
       shrimp.COMLOG$YEAR<-lubridate::year(shrimp.COMLOG$FDATE)
       shrimp.COMLOG$MONTH<-lubridate::month(shrimp.COMLOG$FDATE)
-      shrimp.survey$DATE <- paste0(lubridate::year(shrimp.survey$FDATE),"-",
-                                   sprintf("%02d",lubridate::month(shrimp.survey$FDATE)),"-",
-                                   sprintf("%02d",lubridate::day(shrimp.survey$FDATE)))
+      shrimp.COMLOG$DATE <- paste0(lubridate::year(shrimp.COMLOG$FDATE),"-",
+                                   sprintf("%02d",lubridate::month(shrimp.COMLOG$FDATE)),"-",
+                                   sprintf("%02d",lubridate::day(shrimp.COMLOG$FDATE)))
       save(shrimp.COMLOG, file=r_nm, compress=T)
       utils::write.csv(shrimp.COMLOG, c_nm,row.names = F)
       if (this_showprogress)cat(paste("Saved:\n\t",r_nm,"\n\t",c_nm,"\n"))
@@ -200,7 +201,8 @@ shrimp.db = function( DS="complete.redo",
     r_nm = file.path(rdataPath, "MILLIM.VIEW.rdata")
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("MILLIM.VIEW.",ts)),".csv")
-
+      Sys.setenv(TZ = 'GMT')
+      Sys.setenv(ORA_SDTZ = 'GMT')
       MILLIM.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.MILLIM")
       MILLIM.VIEW$YEAR<-lubridate::year(MILLIM.VIEW$FDATE)
       MILLIM.VIEW$MONTH<-lubridate::month(MILLIM.VIEW$FDATE)
