@@ -107,7 +107,7 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("Survey.Data.",ts)),".csv")
 
-      shrimp.survey<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRSURVEY")
+      shrimp.survey<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRSURVEY_APR2022")
       shrimp.survey$CV_LAT<-convert.dd.dddd(shrimp.survey$BLAT/100)
       shrimp.survey$CV_LONG<-convert.dd.dddd(shrimp.survey$BLONG/100)*-1
       shrimp.survey$YEAR<-lubridate::year(shrimp.survey$FDATE)
@@ -127,7 +127,7 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("Comlog.Data.",ts)),".csv")
 
-      shrimp.COMLOG<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRCOMLOG")
+      shrimp.COMLOG<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRCOMLOG_APR2022")
       shrimp.COMLOG$CV_LAT<-convert.dd.dddd(shrimp.COMLOG$BLAT/100)
       shrimp.COMLOG$CV_LONG<-convert.dd.dddd(shrimp.COMLOG$BLONG/100)*-1
       shrimp.COMLOG$YEAR<-lubridate::year(shrimp.COMLOG$FDATE)
@@ -148,7 +148,7 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("Details.Data.",ts)),".csv")
 
-      shrimp.DETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRDETAIL")
+      shrimp.DETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRDETAIL_APR2022")
       shrimp.DETAILS$CV_LAT<-convert.dd.dddd(shrimp.DETAILS$LAT/100)
       shrimp.DETAILS$CV_LONG<-convert.dd.dddd(shrimp.DETAILS$XLONG/100)*-1
       shrimp.DETAILS$YEAR<-lubridate::year(shrimp.DETAILS$FDATE)
@@ -259,7 +259,7 @@ shrimp.db = function( DS="complete.redo",
     r_nm = file.path(rdataPath, "shrimp.Juvenile.rdata")
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("shrimp.Juv.data.",ts)),".csv")
-      shrimp.Juv<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRJUV")
+      shrimp.Juv<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRJUV_APR2022")
 
       # shrimp.Juv$YEAR<-lubridate::year(shrimp.Juv$FDATE)
       # shrimp.Juv$MONTH<-lubridate::month(shrimp.Juv$FDATE)
