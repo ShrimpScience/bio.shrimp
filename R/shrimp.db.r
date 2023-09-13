@@ -142,27 +142,49 @@ shrimp.db = function( DS="complete.redo",
       load(r_nm, .GlobalEnv)
       if (this_showprogress)cat(paste("Loaded:",r_nm,"\n"))
   }
-  do.details<-function(con=NULL, redo = F, this_showprogress=showprogress){
-    ############################# SHRIMP DETAILS FROM SAMPLING DATA #####################
-    r_nm = file.path(rdataPath, "shrimp.detail.rdata")
+  do.survdetails<-function(con=NULL, redo = F, this_showprogress=showprogress){
+    ############################# SHRIMP DETAILS FROM SURVEY SAMPLING DATA #####################
+    r_nm = file.path(rdataPath, "shrimp.survdetail.rdata")
     if (redo){
-      c_nm = paste0(file.path(csvPath,paste0("Details.Data.",ts)),".csv")
+      c_nm = paste0(file.path(csvPath,paste0("SurvDetails.Data.",ts)),".csv")
 
-      shrimp.DETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRDETAIL_APR2022")
-      shrimp.DETAILS$CV_LAT<-convert.dd.dddd(shrimp.DETAILS$LAT/100)
-      shrimp.DETAILS$CV_LONG<-convert.dd.dddd(shrimp.DETAILS$XLONG/100)*-1
-      shrimp.DETAILS$YEAR<-lubridate::year(shrimp.DETAILS$FDATE)
-      shrimp.DETAILS$MONTH<-lubridate::month(shrimp.DETAILS$FDATE)
-      shrimp.DETAILS$DATE <- paste0(lubridate::year(shrimp.DETAILS$FDATE),"-",
-                                   sprintf("%02d",lubridate::month(shrimp.DETAILS$FDATE)),"-",
-                                   sprintf("%02d",lubridate::day(shrimp.DETAILS$FDATE)))
-      save(shrimp.DETAILS, file=r_nm, compress=T)
-      utils::write.csv(shrimp.DETAILS, c_nm,row.names = F)
+      shrimp.SDETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRSURVDET")
+      shrimp.SDETAILS$CV_LAT<-convert.dd.dddd(shrimp.SDETAILS$LAT/100)
+      shrimp.SDETAILS$CV_LONG<-convert.dd.dddd(shrimp.SDDETAILS$XLONG/100)*-1
+      shrimp.SDETAILS$YEAR<-lubridate::year(shrimp.SDETAILS$FDATE)
+      shrimp.SDETAILS$MONTH<-lubridate::month(shrimp.SDETAILS$FDATE)
+      shrimp.SDETAILS$DATE <- paste0(lubridate::year(shrimp.SDETAILS$FDATE),"-",
+                                   sprintf("%02d",lubridate::month(shrimp.SDETAILS$FDATE)),"-",
+                                   sprintf("%02d",lubridate::day(shrimp.SDETAILS$FDATE)))
+      save(shrimp.SDETAILS, file=r_nm, compress=T)
+      utils::write.csv(shrimp.SDETAILS, c_nm,row.names = F)
       if (this_showprogress)cat(paste("Saved:\n\t",r_nm,"\n\t",c_nm,"\n"))
     }
       load(r_nm, .GlobalEnv)
       if (this_showprogress)cat(paste("Loaded:",r_nm,"\n"))
   }
+  do.comdetails<-function(con=NULL, redo = F, this_showprogress=showprogress){
+    ############################# SHRIMP DETAILS FROM COMMERCIAL SAMPLING DATA #####################
+    r_nm = file.path(rdataPath, "shrimp.comdetail.rdata")
+    if (redo){
+      c_nm = paste0(file.path(csvPath,paste0("ComDetails.Data.",ts)),".csv")
+      
+      shrimp.CDETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRCOMDET")
+      shrimp.CDETAILS$CV_LAT<-convert.dd.dddd(shrimp.CDETAILS$LAT/100)
+      shrimp.CDETAILS$CV_LONG<-convert.dd.dddd(shrimp.CDDETAILS$XLONG/100)*-1
+      shrimp.CDETAILS$YEAR<-lubridate::year(shrimp.CDETAILS$FDATE)
+      shrimp.CDETAILS$MONTH<-lubridate::month(shrimp.CDETAILS$FDATE)
+      shrimp.CDETAILS$DATE <- paste0(lubridate::year(shrimp.CDETAILS$FDATE),"-",
+                                     sprintf("%02d",lubridate::month(shrimp.CDETAILS$FDATE)),"-",
+                                     sprintf("%02d",lubridate::day(shrimp.CDETAILS$FDATE)))
+      save(shrimp.CDETAILS, file=r_nm, compress=T)
+      utils::write.csv(shrimp.CDETAILS, c_nm,row.names = F)
+      if (this_showprogress)cat(paste("Saved:\n\t",r_nm,"\n\t",c_nm,"\n"))
+    }
+    load(r_nm, .GlobalEnv)
+    if (this_showprogress)cat(paste("Loaded:",r_nm,"\n"))
+  }
+  
   do.observer<-function(con=NULL, redo = F, this_showprogress=showprogress){
     ############################# SHRIMP OBSERVER DATA ##########################
     r_nm = file.path(rdataPath, "shrimp.observer.rdata")
