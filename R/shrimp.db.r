@@ -304,7 +304,7 @@ shrimp.db = function( DS="complete.redo",
     complete.flag = ifelse(any(DS %in% c("complete.redo")),T,F)
     do.survey(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
     do.comlogs(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
-    do.details(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
+    do.survdetails(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
     do.observer(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
     do.millim(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
     do.totals(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
@@ -321,7 +321,7 @@ shrimp.db = function( DS="complete.redo",
     }
     if (grepl(DS, pattern = "details")){
       details.flag = ifelse(DS %in% c("details.redo"),T,F)
-      do.details(con=thiscon,redo=details.flag, this_showprogress=showprogress)
+      do.survdetails(con=thiscon,redo=details.flag, this_showprogress=showprogress)
     }
     if (grepl(DS, pattern = "observer")){
       observer.flag = ifelse(DS %in% c("observer.redo"),T,F)
