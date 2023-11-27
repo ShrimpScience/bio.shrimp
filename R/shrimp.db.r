@@ -148,7 +148,7 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("SurvDetails.Data.",ts)),".csv")
 
-      shrimp.SDETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRSURVDET")
+      shrimp.SDETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.SURVDET_SET")
       shrimp.SDETAILS$CV_LAT<-convert.dd.dddd(shrimp.SDETAILS$LAT/100)
       shrimp.SDETAILS$CV_LONG<-convert.dd.dddd(shrimp.SDDETAILS$XLONG/100)*-1
       shrimp.SDETAILS$YEAR<-lubridate::year(shrimp.SDETAILS$FDATE)
