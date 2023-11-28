@@ -127,7 +127,7 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("Comlog.Data.",ts)),".csv")
 
-      shrimp.COMLOG<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRCOMLOG_APR2022")
+      shrimp.COMLOG<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRCOMLOG")
       shrimp.COMLOG$CV_LAT<-convert.dd.dddd(shrimp.COMLOG$BLAT/100)
       shrimp.COMLOG$CV_LONG<-convert.dd.dddd(shrimp.COMLOG$BLONG/100)*-1
       shrimp.COMLOG$YEAR<-lubridate::year(shrimp.COMLOG$FDATE)
@@ -149,8 +149,9 @@ shrimp.db = function( DS="complete.redo",
       c_nm = paste0(file.path(csvPath,paste0("SurvDetails.Data.",ts)),".csv")
 
       shrimp.SDETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.SURVDET_SET")
-      shrimp.SDETAILS$CV_LAT<-convert.dd.dddd(shrimp.SDETAILS$LAT/100)
-      shrimp.SDETAILS$CV_LONG<-convert.dd.dddd(shrimp.SDDETAILS$XLONG/100)*-1
+      #browser()
+      shrimp.SDETAILS$CV_LAT<-convert.dd.dddd(shrimp.SDETAILS$BLAT/100)
+      shrimp.SDETAILS$CV_LONG<-convert.dd.dddd(shrimp.SDETAILS$BLONG/100)*-1
       shrimp.SDETAILS$YEAR<-lubridate::year(shrimp.SDETAILS$FDATE)
       shrimp.SDETAILS$MONTH<-lubridate::month(shrimp.SDETAILS$FDATE)
       shrimp.SDETAILS$DATE <- paste0(lubridate::year(shrimp.SDETAILS$FDATE),"-",
@@ -281,7 +282,7 @@ shrimp.db = function( DS="complete.redo",
     r_nm = file.path(rdataPath, "shrimp.Juvenile.rdata")
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("shrimp.Juv.data.",ts)),".csv")
-      shrimp.Juv<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRJUV_APR2022")
+      shrimp.Juv<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRSURVRECRUIT")
 
       # shrimp.Juv$YEAR<-lubridate::year(shrimp.Juv$FDATE)
       # shrimp.Juv$MONTH<-lubridate::month(shrimp.Juv$FDATE)
