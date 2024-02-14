@@ -106,7 +106,7 @@ shrimp.db = function( DS="complete.redo",
     r_nm = file.path(rdataPath, "shrimp.survey.rdata")
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("Survey.Data.",ts)),".csv")
-
+      #shrimp.survey<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRSURVEY_APR2022")
       shrimp.survey<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRSURVEY")
       shrimp.survey$CV_LAT<-convert.dd.dddd(shrimp.survey$BLAT/100)
       shrimp.survey$CV_LONG<-convert.dd.dddd(shrimp.survey$BLONG/100)*-1
@@ -126,8 +126,8 @@ shrimp.db = function( DS="complete.redo",
     r_nm = file.path(rdataPath, "shrimp.comlog.rdata")
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("Comlog.Data.",ts)),".csv")
-
-      shrimp.COMLOG<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRCOMLOG_APR2022")
+      #shrimp.COMLOG<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRCOMLOG_APR2022")
+      shrimp.COMLOG<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRCOMLOG")
       shrimp.COMLOG$CV_LAT<-convert.dd.dddd(shrimp.COMLOG$BLAT/100)
       shrimp.COMLOG$CV_LONG<-convert.dd.dddd(shrimp.COMLOG$BLONG/100)*-1
       shrimp.COMLOG$YEAR<-lubridate::year(shrimp.COMLOG$FDATE)
@@ -148,9 +148,9 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("SurvDetails.Data.",ts)),".csv")
 
-      shrimp.SDETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRSURVDET")
-      shrimp.SDETAILS$CV_LAT<-convert.dd.dddd(shrimp.SDETAILS$LAT/100)
-      shrimp.SDETAILS$CV_LONG<-convert.dd.dddd(shrimp.SDDETAILS$XLONG/100)*-1
+      shrimp.SDETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.SURVDET_SET")
+      shrimp.SDETAILS$CV_LAT<-convert.dd.dddd(shrimp.SDETAILS$BLAT/100)
+      shrimp.SDETAILS$CV_LONG<-convert.dd.dddd(shrimp.SDETAILS$BLONG/100)*-1
       shrimp.SDETAILS$YEAR<-lubridate::year(shrimp.SDETAILS$FDATE)
       shrimp.SDETAILS$MONTH<-lubridate::month(shrimp.SDETAILS$FDATE)
       shrimp.SDETAILS$DATE <- paste0(lubridate::year(shrimp.SDETAILS$FDATE),"-",
@@ -169,9 +169,9 @@ shrimp.db = function( DS="complete.redo",
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("ComDetails.Data.",ts)),".csv")
       
-      shrimp.CDETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRCOMDET")
-      shrimp.CDETAILS$CV_LAT<-convert.dd.dddd(shrimp.CDETAILS$LAT/100)
-      shrimp.CDETAILS$CV_LONG<-convert.dd.dddd(shrimp.CDDETAILS$XLONG/100)*-1
+      shrimp.CDETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.COMDET_SET")
+      shrimp.CDETAILS$CV_LAT<-convert.dd.dddd(shrimp.CDETAILS$BLAT/100)
+      shrimp.CDETAILS$CV_LONG<-convert.dd.dddd(shrimp.CDETAILS$BLONG/100)*-1
       shrimp.CDETAILS$YEAR<-lubridate::year(shrimp.CDETAILS$FDATE)
       shrimp.CDETAILS$MONTH<-lubridate::month(shrimp.CDETAILS$FDATE)
       shrimp.CDETAILS$DATE <- paste0(lubridate::year(shrimp.CDETAILS$FDATE),"-",
@@ -225,7 +225,7 @@ shrimp.db = function( DS="complete.redo",
       c_nm = paste0(file.path(csvPath,paste0("MILLIM.VIEW.",ts)),".csv")
       Sys.setenv(TZ = 'GMT')
       Sys.setenv(ORA_SDTZ = 'GMT')
-      MILLIM.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.MILLIM")
+      MILLIM.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.MAT_SIZE_FREQ")
       MILLIM.VIEW$YEAR<-lubridate::year(MILLIM.VIEW$FDATE)
       MILLIM.VIEW$MONTH<-lubridate::month(MILLIM.VIEW$FDATE)
       MILLIM.VIEW$DATE <- paste0(lubridate::year(MILLIM.VIEW$FDATE),"-",
@@ -243,8 +243,7 @@ shrimp.db = function( DS="complete.redo",
     r_nm = file.path(rdataPath, "TOTALS.VIEW.rdata")
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("TOTALS.VIEW.",ts)),".csv")
-
-      TOTALS.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.TOTALS")
+      TOTALS.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.SUM_STATS")
       TOTALS.VIEW$YEAR<-lubridate::year(TOTALS.VIEW$FDATE)
       TOTALS.VIEW$MONTH<-lubridate::month(TOTALS.VIEW$FDATE)
       TOTALS.VIEW$DATE <- paste0(lubridate::year(TOTALS.VIEW$FDATE),"-",
@@ -262,8 +261,7 @@ shrimp.db = function( DS="complete.redo",
     r_nm = file.path(rdataPath, "TOTALSFEMTRAN.VIEW.rdata")
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("TOTALSFEMTRAN.VIEW.",ts)),".csv")
-
-      TOTALSFEMTRAN.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.TOTALSFEMTRAN")
+      TOTALSFEMTRAN.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.SUM_STATS_FEM_TRAN")
       TOTALSFEMTRAN.VIEW$YEAR<-lubridate::year(TOTALSFEMTRAN.VIEW$FDATE)
       TOTALSFEMTRAN.VIEW$MONTH<-lubridate::month(TOTALSFEMTRAN.VIEW$FDATE)
       TOTALSFEMTRAN.VIEW$DATE <- paste0(lubridate::year(TOTALSFEMTRAN.VIEW$FDATE),"-",
@@ -276,18 +274,16 @@ shrimp.db = function( DS="complete.redo",
       load(r_nm, .GlobalEnv)
       if (this_showprogress)cat(paste("Loaded:",r_nm,"\n"))
   }
-  do.juveniles<-function(con=NULL, redo = F, this_showprogress=showprogress){
-    ############################# SHRIMP SURVEY JUVENILES ##########################
-    r_nm = file.path(rdataPath, "shrimp.Juvenile.rdata")
+  do.recruitment<-function(con=NULL, redo = F, this_showprogress=showprogress){
+    ############################# SHRIMP SURVEY JUVENILES VIEW ##########################
+    r_nm = file.path(rdataPath, "shrimp.Recruit.rdata")
     if (redo){
-      c_nm = paste0(file.path(csvPath,paste0("shrimp.Juv.data.",ts)),".csv")
-      shrimp.Juv<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRJUV_APR2022")
-
-      # shrimp.Juv$YEAR<-lubridate::year(shrimp.Juv$FDATE)
-      # shrimp.Juv$MONTH<-lubridate::month(shrimp.Juv$FDATE)
-      cat("Manon's code tried to create YEAR and MONTH from FDATE, but that field doesn't exist\n")
-      save(shrimp.Juv, file=r_nm, compress=T)
-      utils::write.csv(shrimp.Juv, c_nm,row.names = F)
+      c_nm = paste0(file.path(csvPath,paste0("shrimp.recruit.data.",ts)),".csv")
+      RECRUIT.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.SURVRECRUIT_SET")
+      RECRUIT.VIEW$YEAR<-lubridate::year(RECRUIT.VIEW$FDATE)
+      RECRUIT.VIEW$MONTH<-lubridate::month(RECRUIT.VIEW$FDATE)
+      save(RECRUIT.VIEW, file=r_nm, compress=T)
+      utils::write.csv(RECRUIT.VIEW, c_nm,row.names = F)
       if (this_showprogress)cat(paste("Saved:\n\t",r_nm,"\n\t",c_nm,"\n"))
     }
     load(r_nm, .GlobalEnv)
@@ -304,12 +300,13 @@ shrimp.db = function( DS="complete.redo",
     complete.flag = ifelse(any(DS %in% c("complete.redo")),T,F)
     do.survey(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
     do.comlogs(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
-    do.details(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
+    do.survdetails(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
+    do.comdetails(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
     do.observer(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
     do.millim(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
     do.totals(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
     do.totalsfemtran(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
-    do.juveniles(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
+    do.recruitment(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
   }else{
     if (grepl(DS, pattern = "survey")){
       survey.flag = ifelse(DS %in% c("survey.redo"),T,F)
@@ -319,9 +316,13 @@ shrimp.db = function( DS="complete.redo",
       comlogs.flag = ifelse(DS %in% c("comlogs.redo"),T,F)
       do.comlogs(con=thiscon,redo = comlogs.flag, this_showprogress=showprogress)
     }
-    if (grepl(DS, pattern = "details")){
-      details.flag = ifelse(DS %in% c("details.redo"),T,F)
-      do.details(con=thiscon,redo=details.flag, this_showprogress=showprogress)
+    if (grepl(DS, pattern = "survdetails")){
+      details.flag = ifelse(DS %in% c("survdetails.redo"),T,F)
+      do.survdetails(con=thiscon,redo=details.flag, this_showprogress=showprogress)
+    }
+    if (grepl(DS, pattern = "comdetails")){
+      details.flag = ifelse(DS %in% c("comdetails.redo"),T,F)
+      do.comdetails(con=thiscon,redo=details.flag, this_showprogress=showprogress)
     }
     if (grepl(DS, pattern = "observer")){
       observer.flag = ifelse(DS %in% c("observer.redo"),T,F)
@@ -342,9 +343,9 @@ shrimp.db = function( DS="complete.redo",
       totals.flag = ifelse(DS %in% c("totals.redo"),T,F)
       do.totals(con=thiscon,redo=totals.flag, this_showprogress=showprogress)
     }
-    if (grepl(DS, pattern = "juveniles")){
-      juveniles.flag = ifelse(DS %in% c("juveniles.redo"),T,F)
-      do.juveniles(con=thiscon,redo=juveniles.flag, this_showprogress=showprogress)
+    if (grepl(DS, pattern = "recruitment")){
+      recruitment.flag = ifelse(DS %in% c("recruitment.redo"),T,F)
+      do.recruitment(con=thiscon,redo=recruitment.flag, this_showprogress=showprogress)
     }
   }
   gc()
