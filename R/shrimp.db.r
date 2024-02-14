@@ -126,11 +126,6 @@ shrimp.db = function( DS="complete.redo",
     r_nm = file.path(rdataPath, "shrimp.comlog.rdata")
     if (redo){
       c_nm = paste0(file.path(csvPath,paste0("Comlog.Data.",ts)),".csv")
-<<<<<<< HEAD
-      #shrimp.COMLOG<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRCOMLOG_APR2022")
-=======
-
->>>>>>> a597c18d989dc1e0a698937cb25bd5c74b9569a4
       shrimp.COMLOG<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRCOMLOG")
       shrimp.COMLOG$CV_LAT<-convert.dd.dddd(shrimp.COMLOG$BLAT/100)
       shrimp.COMLOG$CV_LONG<-convert.dd.dddd(shrimp.COMLOG$BLONG/100)*-1
@@ -153,10 +148,6 @@ shrimp.db = function( DS="complete.redo",
       c_nm = paste0(file.path(csvPath,paste0("SurvDetails.Data.",ts)),".csv")
 
       shrimp.SDETAILS<-ROracle::dbGetQuery(con,"select * from SHRIMP.SURVDET_SET")
-<<<<<<< HEAD
-=======
-      #browser()
->>>>>>> a597c18d989dc1e0a698937cb25bd5c74b9569a4
       shrimp.SDETAILS$CV_LAT<-convert.dd.dddd(shrimp.SDETAILS$BLAT/100)
       shrimp.SDETAILS$CV_LONG<-convert.dd.dddd(shrimp.SDETAILS$BLONG/100)*-1
       shrimp.SDETAILS$YEAR<-lubridate::year(shrimp.SDETAILS$FDATE)
@@ -286,23 +277,12 @@ shrimp.db = function( DS="complete.redo",
     ############################# SHRIMP SURVEY JUVENILES VIEW ##########################
     r_nm = file.path(rdataPath, "shrimp.Recruit.rdata")
     if (redo){
-<<<<<<< HEAD
       c_nm = paste0(file.path(csvPath,paste0("shrimp.recruit.data.",ts)),".csv")
       RECRUIT.VIEW<-ROracle::dbGetQuery(con,"select * from SHRIMP.SURVRECRUIT_SET")
       RECRUIT.VIEW$YEAR<-lubridate::year(RECRUIT.VIEW$FDATE)
       RECRUIT.VIEW$MONTH<-lubridate::month(RECRUIT.VIEW$FDATE)
       save(RECRUIT.VIEW, file=r_nm, compress=T)
       utils::write.csv(RECRUIT.VIEW, c_nm,row.names = F)
-=======
-      c_nm = paste0(file.path(csvPath,paste0("shrimp.Juv.data.",ts)),".csv")
-      shrimp.Juv<-ROracle::dbGetQuery(con,"select * from SHRIMP.SHRSURVRECRUIT")
-
-      # shrimp.Juv$YEAR<-lubridate::year(shrimp.Juv$FDATE)
-      # shrimp.Juv$MONTH<-lubridate::month(shrimp.Juv$FDATE)
-      cat("Manon's code tried to create YEAR and MONTH from FDATE, but that field doesn't exist\n")
-      save(shrimp.Juv, file=r_nm, compress=T)
-      utils::write.csv(shrimp.Juv, c_nm,row.names = F)
->>>>>>> a597c18d989dc1e0a698937cb25bd5c74b9569a4
       if (this_showprogress)cat(paste("Saved:\n\t",r_nm,"\n\t",c_nm,"\n"))
     }
     load(r_nm, .GlobalEnv)
@@ -320,10 +300,7 @@ shrimp.db = function( DS="complete.redo",
     do.survey(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
     do.comlogs(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
     do.survdetails(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
-<<<<<<< HEAD
     do.comdetails(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
-=======
->>>>>>> a597c18d989dc1e0a698937cb25bd5c74b9569a4
     do.observer(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
     do.millim(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
     do.totals(con=thiscon,redo=complete.flag, this_showprogress=showprogress)
@@ -338,7 +315,6 @@ shrimp.db = function( DS="complete.redo",
       comlogs.flag = ifelse(DS %in% c("comlogs.redo"),T,F)
       do.comlogs(con=thiscon,redo = comlogs.flag, this_showprogress=showprogress)
     }
-<<<<<<< HEAD
     if (grepl(DS, pattern = "survdetails")){
       details.flag = ifelse(DS %in% c("survdetails.redo"),T,F)
       do.survdetails(con=thiscon,redo=details.flag, this_showprogress=showprogress)
@@ -346,11 +322,10 @@ shrimp.db = function( DS="complete.redo",
     if (grepl(DS, pattern = "comdetails")){
       details.flag = ifelse(DS %in% c("comdetails.redo"),T,F)
       do.comdetails(con=thiscon,redo=details.flag, this_showprogress=showprogress)
-=======
+    }
     if (grepl(DS, pattern = "details")){
       details.flag = ifelse(DS %in% c("details.redo"),T,F)
       do.survdetails(con=thiscon,redo=details.flag, this_showprogress=showprogress)
->>>>>>> a597c18d989dc1e0a698937cb25bd5c74b9569a4
     }
     if (grepl(DS, pattern = "observer")){
       observer.flag = ifelse(DS %in% c("observer.redo"),T,F)
